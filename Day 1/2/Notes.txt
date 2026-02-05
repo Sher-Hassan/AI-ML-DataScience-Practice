@@ -1,0 +1,19 @@
+1. It is always a good practice to start with creating a seperate environment. 
+- Open command prompt in terminal in VS Code
+- conda create -p venv python==3.14
+- type y
+- venv created
+- add requirements.txt
+- add what you want to install in requirements.txt (pip install ----)
+- Any packages can be added to requirements.txt
+- To activate an environment
+- conda activate venv/  (this venv will be activated)
+- Further installation of packages will take place in this environment
+- conda deactivate  (To deactivate)
+- Now to install the packages inside requirements.txt:
+- pip install -r requirements.txt (These will be installed in the environment created)
+- Jupiter Notebook (ipynb) is an advanced py file to run this we have to install two packages.(ipykernel, )
+- install jupiter extension
+- Click on detecting kernels in .ipynb file and select the environment created (venv)
+- press shift + enter to execute any cell in jupiter notebook file
+- I may delete venv folders inside cuz they take too much space.
