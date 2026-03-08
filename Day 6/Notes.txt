@@ -1,0 +1,493 @@
+1. It is always a good practice to start with creating a seperate environment. 
+- Open command prompt in terminal in VS Code
+- conda create -p venv python==3.14
+- type y
+- venv created
+- add requirements.txt
+- add what you want to install in requirements.txt (pip install ----)
+- Any packages can be added to requirements.txt
+- To activate an environment
+- conda activate venv/  (this venv will be activated) (remember to run in command prompt in terminal)
+- Further installation of packages will take place in this environment
+- conda deactivate  (To deactivate)
+- Now to install the packages inside requirements.txt:
+- pip install -r requirements.txt (These will be installed in the environment created)
+- Jupiter Notebook (ipynb) is an advanced py file to run this we have to install two packages.(ipykernel, )
+- install jupiter extension
+- Click on detecting kernels in .ipynb file and select the environment created (venv)
+
+Three ways of creating virtual environments
+1- pyhton -m venv venv_name
+- venv_name\Scripts\activate
+- Now i can install any any library (pip install library)
+- deactivate (for deactivating virtual environemt)
+
+2- Used for linux commands(also used in powershell and gitbash):
+- pip install virtualenv
+- virtaulenv -p python3 venv_name
+- venv_name\Scripts\activate
+- deactivate (for deactivating virtual environemt)
+
+3- (using Anaconda)(Most default way)
+- conda create -p venv_name python==3.14 -y (we can use other version for this it will not get error if that python is not installed)
+
+Python Modules and packages
+helps organize and reuse Code
+
+way 1:
+
+import math
+math.sqrt(16)
+
+way 2:
+
+from math import sqrt, pi
+print(sqrt(16))
+print(sqrt(25))
+print(pi)
+
+(importing all)
+from math import *
+print(sqrt(16))
+print(pi)
+
+Using alais :
+
+import numpy as np  (np is used as alais)
+np.  (this accesses numpy) (we can also write numpy. but just np. will be easier)
+
+How to create your own custom module/package (can be called in other files)
+- make a folder (ex.  package)
+- first we make a file "__init__.py"  in it(specialized file used in python to define packages and their namespaces)
+- remember that if we want to initialize a folder for packages (user defined) we have to make an empty file __init__.py inside it
+- make a file for module/package  package_name.py in that folder.
+- define its functions inside it.
+- import in any file using:
+from package.maths import addition
+addition(2,3)
+OR 
+from package import maths
+maths.addition(2,3)
+syntax: 
+from folder_name.package_name import function_name
+function_name()
+- By this way we can have multiple self defined functions which can be imported
+- if we want to make subpackages folder inside the package folder we have to put "__init__.py" file in that too.
+- we can call that too using imports
+from folder_name.subpackageFolder_name.packagename import function_name
+funtion_name()
+
+Standard Library Overview
+- In Python, the standard library is the big collection of built-in modules that come with Python itself—no extra installs needed. Think of it as Python’s “batteries included” toolbox.
+
+Examples: 
+--- Start of Examples
+
+import array
+arr = array.array('i'), [1,2,3,4]
+print(arr)
+
+import math
+math.sqrt(16)
+
+import random
+print(random.randint(1,10))
+print(random.choice(['apple', 'banana', 'cherry']))
+
+important standard library (OS)
+Used for IO operations 
+
+import os 
+print(os.getcwd())
+os.mkdir('test_dir')
+
+## High level operations on files and collection of files
+
+import shutil
+shutil.copyfile('source.txt', 'destination.txt')
+
+## Data Serialization
+# for conversion
+# to work with JSON (usiually used in APIs)
+
+import json
+data = {'name': 'Sher', 'age': 25}
+json_str=json.dumps(data) # JSON to string
+print(json_str)
+print(type(json_str))
+
+parsed_data = json.loads(json_str)
+print(parsed_data)
+print(type(parsed_data))
+
+## Result:
+{"name": "Sher", "age": 25}
+<class 'str'>
+{'name': 'Sher', 'age': 25}
+<class 'dict'>
+
+## CSV
+# for working with CSV files
+
+import csv
+
+with open('example.csv', mode='w', newline='') as file:
+    writer=csv.writer(file)
+    writer.writerow(['name', 'age'])
+    writer.writerow(['Sher', '20'])
+
+with open('example.csv', mode='r') as file:
+    reader=csv.reader(file)
+    for row in reader:
+        print(row)
+
+## datetime
+from datetime import datetime,timedelta # timedelta is used for changes in time
+now = datetime.now()
+print(now)
+
+yesterday = now - timedelta(days=1)
+print(yesterday)
+
+## time
+# imagine we want the program to sleep for 2 seconds
+
+import time
+print(time.time())
+time.sleep(2)
+print(time.time())
+
+## Regular expression
+# re is a standard library module that lets you search, match, split, and replace text using patterns (called regular expressions or regex).
+import re
+
+pattern = r'\d+'
+text = 'There are 212 apples'
+match = re.search(pattern,text)
+print(match.group())
+
+--- End of Examples
+
+
+## How to write f stirings {any expression inside it}
+x = 10
+
+print(f"my score is {x}")
+
+Working with file paths
+ 
+ Examples:
+ --- Start of Examples
+
+# Working with file paths
+
+import os
+items=os.listdir('.')
+print(items)
+
+# Joining paths
+
+import os
+
+dir_name = "folder"
+file_name= "file.txt"
+full_path = os.path.join(dir_name,file_name)
+full_final_path = os.path.join(os.getcwd(),dir_name,file_name)
+print(full_path)
+print(full_final_path)
+
+## checking if the file is present or not
+
+import os
+path = 'example1.txt'
+if os.path.exists(path):
+    print(f"The path '{path}' exists")
+else:
+    print(f"The path '{path}' does not exists")
+
+#Checking if a Path is a file or Directory
+
+import os
+path = 'Notes.txt'
+
+if os.path.isfile(path):
+    print(f"'{path}' is a file")
+elif os.path.isdir(path):
+    print(f"'{path}' is a directory")
+else:
+    print(f"'{path}' is a neither a directory nor a file")
+
+## Getting the absolute path
+# better than joining (full_final_path = os.path.join(os.getcwd(),dir_name,file_name))
+
+realative_path = 'Notes.txt'
+absolute_path = os.path.abspath(realative_path)
+print(absolute_path)
+
+Exception Handling
+# Exception try, except blocks
+
+try:
+    a=b
+except:
+    print("Variable not assigned")
+
+# how to display the error
+# What type of exception is it throwing?
+
+a = b
+NameError: name 'b' is not defined
+
+So it is a name error type
+Now we can use it
+
+try:
+    a=b
+except NameError as ex:
+    print(ex)
+
+Syntax will be:
+
+try:
+  ///
+except error_type as error_defined_name
+  ///
+  print(error_defined_name)
+
+
+ Exception Try, Except Block
+try:
+    a = b
+except:
+    print("The variable 'b' is not defined.")
+
+Actually we can catch the kind of exception (NameError in this case)
+a = b
+
+So we can call this exception in except block  (using alais here using as keyword)
+try:
+    a=b
+except NameError as ex:
+    print(ex)
+
+Zero Error exception example:
+try:
+    result = 1/0
+except ZeroDivisionError as err:
+    print("Enter denom greater than 0")
+
+What caught in except block will only be handled
+Here only ZeroDivisionError will be caught not the NameError cuz i have only caught that in except block
+try:
+    result = 1/2
+    a = b
+except ZeroDivisionError as err:
+    print("Enter denom greater than 0")
+
+All types of errors are derivered from single "Exception" named class
+if we use "Exception" class we have to use it in the end after all other error classes/types
+try:
+    result = 1/2
+    a = b
+except ZeroDivisionError as err:
+    print("Enter denom greater than 0")
+except Exception as nmer:
+    print(nmer)
+
+Example of try except
+try:
+    numb = int(input("Enter a value: "))
+    res = 10/numb
+except ValueError:
+    print("Enter valid value")
+except ZeroDivisionError:
+    print("Enter greater than 0")
+except Exception as ex:
+    print(ex)
+
+# try, except and else block
+else will be executed only and only if try executes successfully without triggering any except block. 
+if any except block is triggered then that except will be excuted and else will not be
+try:
+    numb = int(input("Enter a value: "))
+    res = 10/numb
+except ValueError:
+    print("Enter valid value")
+except ZeroDivisionError:
+    print("Enter greater than 0")
+except Exception as ex:
+    print(ex)
+else:
+    print(f"the value is {res}")
+
+
+ try, except, else and finally block
+ So finally block is exectued no mattter what happens. even if try block is successfull and else runs or any of the except block is triggered still finally will be executed
+ So program runs in try block if successfull then else block after that finally block is executed. If there is exception then that except block is executed and then finally is executed
+
+try:
+    numb = int(input("Enter a value: "))
+    res = 10/numb
+except ValueError:
+    print("Enter valid value")
+except ZeroDivisionError:
+    print("Enter greater than 0")
+except Exception as ex:
+    print(ex)
+else:
+    print(f"the value is {res}")
+finally:
+    print("Execution completed")
+
+## Numpy:
+
+NumPy is a fundamental library for scientific computing in Python. It provides support for arrays and matrices, along with a collection of mathematical functions to operate on these data structures. In this lesson, we will cover the basics of NumPy, focusing on arrays and vectorized operations.
+
+# Numpy Notes
+import numpy as np
+
+## create array using numpy
+## create a 1d array
+arr1=np.array([1,2,3,4,5])
+print(arr1)
+# this is not a list
+print(type(arr1))
+# we can also see the shape of array
+print(arr1.shape)
+# in 1d array there are no rows and columns
+# reshaping 1d array to 2d array
+arr2 = np.array([1,2,3,4,5])
+arr2.reshape(1,5) # One row and five columns
+# Now it will respond as array([[1, 2, 3, 4, 5]]) which has two [[]] brackets which shows it is 2d array. similarly 3d will have three brackets
+
+# similarly we can use two [[]] for creating 2d and [[[]]] for creating 3d array
+arr3 = np.array([[1,2,3,4,5]])
+print(arr3)
+
+# for multiple rows
+arr4 = np.array([[1,2,3,4], [5,6,7,8]])
+print(arr4)
+print(arr4.shape) # (2,4) cuz there are two rows and four columns
+
+# Creating arrays with inbuilt functions
+np.arange(0,10,2) # range from 0 to 10 with step 2
+# We can use multiple func like this
+np.arange(0,10,2).reshape(5,1)
+
+# Inbuilt functions for Numpy
+np.ones((3,4)) # make an array with rows,columns consisting 1 as element
+
+np.eye(3) # Creates an identiny matrix with argument as number of diagonal elements
+
+# Attributes of Numpy
+arr = np.array([[1, 2, 3], [4, 5, 6]])
+
+print("Array:\n", arr)
+print("Shape:", arr.shape)  # Output: (2, 3)
+print("Number of dimensions:", arr.ndim)  # Output: 2
+print("Size (number of elements):", arr.size)  # Output: 6
+print("Data type:", arr.dtype)  # Output: int64 (may vary based on platform)
+print("Item size (in bytes):", arr.itemsize)  # Output: 8 (may vary based on platform)
+
+## Numpy Vectorized Operation
+arr1 = np.array([1,2,3,4,5])
+arr2 = np.array([10,20,30,40,50])
+
+# Element Wise addition
+print("Addition:", arr1+arr2)
+
+# Elememt Wise Subtraction
+print("Subtraction: ", arr2 - arr1)
+
+# similarly is multiplication, division etc
+
+## Universal Function
+# functions that applies to entire array
+arr = np.array([2,3,4,5,6])
+
+# square root
+print(np.sqrt(arr))
+
+# Exponential
+print(np.exp(arr))
+
+# Sine
+print(np.sin(arr))
+
+# Natural log
+print(np.log(arr))
+
+# Similarly there are many more
+
+## Array slicing and indexing
+
+arr = np.array([[1,2,3,4], [5,6,7,8], [9,10,11,12]])
+print("Array : \n", arr)
+
+# how do i access a single element from array
+# lets pick up 1
+# Know the row and column which is its index
+
+arr[0][0]
+
+# lets pick 7, 8, 11, 12 (using slicing)
+
+arr[1:, 2:]
+
+# lets pick 3, 4, 7, 8
+
+arr[0:2, 2:4]
+
+# So we can pick up any elements using this slicing and indexing mechanism
+
+## Modify array elements
+arr[0,0] = 100
+print(arr)
+
+arr[1:] = 99
+print(arr)
+
+arr[1:3, 2:4] = 34
+print(arr)
+
+## Statistical concepts--Normalization
+
+arr = np.array([[1, 2, 3], [4, 5, 6]]) 
+
+data = np.array([1, 2, 3, 4, 5]) 
+
+# Calculate statistics
+mean = np.mean(data) 
+std_dev = np.std(data) 
+
+# Normalize the data
+normalized_data = (data - mean) / std_dev 
+
+print(normalized_data)
+
+# --- Statistical Operations ---
+data = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+
+# Mean
+mean = np.mean(data)
+print("Mean:", mean)
+
+# Median
+median = np.median(data)
+print("Median:", median)
+
+# Standard deviation
+std_dev = np.std(data)
+print("Standard Deviation:", std_dev)
+
+# Variance
+variance = np.var(data)
+print("Variance:", variance)
+
+# Logical operation
+data = np.array([1,2,3,4,5,6,7,8,9,10])
+
+data[(data>=5) & (data<=8)]
+
+# anything local operation can be used like and, or, not
+
