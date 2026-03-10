@@ -81,7 +81,7 @@ Standard Library Overview
 - In Python, the standard library is the big collection of built-in modules that come with Python itself—no extra installs needed. Think of it as Python’s “batteries included” toolbox.
 
 Examples: 
---- Start of Examples
+
 
 import array
 arr = array.array('i'), [1,2,3,4]
@@ -177,7 +177,6 @@ print(f"my score is {x}")
 Working with file paths
  
  Examples:
- --- Start of Examples
 
 # Working with file paths
 
@@ -491,3 +490,172 @@ data[(data>=5) & (data<=8)]
 
 # anything local operation can be used like and, or, not
 
+# Pandas: Data Manipulation Library
+Pandas is a powerful data manipulation library in Python, widely used for data analysis and data cleaning. It provides two primary data structures:
+- **Series**: One-dimensional array-like object
+- **DataFrame**: Two-dimensional, size-mutable, tabular data structure with labeled axes (rows and columns)
+
+## Importing Pandas
+import pandas as pd
+
+## Pandas Series
+A Pandas Series is a one-dimensional array-like object that can hold any data type. It is similar to a column in a table.
+
+Example:
+data = [1,2,3,4,5]
+series = pd.Series(data)
+print("Series \n", series)
+print(type(series))
+# Output:
+# 0    1
+# 1    2
+# 2    3
+# 3    4
+# 4    5
+# dtype: int64
+# <class 'pandas.Series'>
+
+### Creating Series from Dictionary
+
+data = {'a':1, 'b':2, 'c':3}
+series_dict = pd.Series(data)
+print(series_dict)
+# Keys become index, values are series values
+# Output:
+# a    1
+# b    2
+# c    3
+# dtype: int64
+
+# Custom index
+
+data = [10,20,30]
+index = ['a','b','c']
+pd.Series(data, index=index)
+# Output:
+# a    10
+# b    20
+# c    30
+# dtype: int64
+
+## Pandas DataFrame
+A Pandas DataFrame is a two-dimensional, size-mutable, tabular data structure with labeled axes (rows and columns).
+
+### Reading Data
+- CSV & Text: pd.read_csv() for comma-separated values or general delimited text files.
+- Excel: pd.read_excel() for .xlsx and .xls files (supports multiple sheets).
+- JSON: pd.read_json() for web-based data structures.
+- SQL Databases: pd.read_sql() to pull data directly from databases like PostgreSQL, MySQL, or SQLite.
+
+### Creating DataFrame from Dictionary of Lists
+
+data = {
+    'Name': ['Sher', 'Hassan', 'Khan'],
+    'Age': [18,19,20],
+    'City': ['Quetta', 'Islamabad', 'Zhob']
+}
+df = pd.DataFrame(data)
+print(df)
+print(type(df))
+# Output:
+#      Name  Age       City
+# 0    Sher   18     Quetta
+# 1  Hassan   19  Islamabad
+# 2    Khan   20       Zhob
+# <class 'pandas.DataFrame'>
+
+### Creating DataFrame from List of Dictionaries
+
+data1 = [
+    {'Name': 'Sher','Age': 20, 'City': 'Quetta'},
+    {'Name': 'Hassan','Age': 20, 'City': 'Islamabad'},
+    {'Name': 'Khan','Age': 20, 'City': 'Zhob'},
+    {'Name': 'Ali','Age': 20, 'City': 'Karachi'}
+]
+df1 = pd.DataFrame(data1)
+print(df1)
+print(type(df1))
+# Output:
+#      Name  Age       City
+# 0    Sher   20     Quetta
+# 1  Hassan   20  Islamabad
+# 2    Khan   20       Zhob
+# 3     Ali   20    Karachi
+# <class 'pandas.DataFrame'>
+
+### Reading CSV
+
+df = pd.read_csv('sales_data.csv')
+# Top 5 elements
+print(df.head(5))
+# Last 5 elements
+print(df.tail(5))
+
+## Accessing Data from DataFrame
+
+df
+# Output:
+# Name    Age     City
+# 0   Sher    20      Quetta
+# 1   Hassan  20      Islamabad
+# 2   Khan    20      Zhob
+# 3   Ali     20      Karachi
+
+# Accessing columns (returns Series)
+df['Name']
+# Accessing row by index
+df.loc[0]
+# Accessing column by index
+df.iloc[0]
+# Accessing specific element by label
+df.loc[0, 'Name']
+# Accessing specific element by index
+df.iloc[0, 2]
+# Accessing element with .at
+df.at[1, 'Age']
+# Accessing element with .iat
+df.iat[1,2]
+
+## Data Manipulation with DataFrame
+
+### Adding a new column
+df['Salary'] = [50000, 60000, 70000, 80000]
+df
+# Output:
+# Name    Age     City      Salary
+# 0   Sher    20      Quetta    50000
+# 1   Hassan  20      Islamabad 60000
+# 2   Khan    20      Zhob      70000
+# 3   Ali     20      Karachi   80000
+
+### Removing a column
+# df.drop('Salary') # Default axis=0 (rows), so throws KeyError
+# To remove column:
+df.drop('Salary', axis=1)
+# Or:
+df.drop(columns=['Salary'])
+# To save changes:
+df = df.drop(columns=['Salary'])
+# Or:
+df.drop('Salary', axis=1, inplace=True)
+
+### Modifying column values
+df['Age'] = df['Age'] + 1
+df
+
+### Removing a row
+df.drop(3, inplace=True)
+df
+
+### Statistical Data
+df.describe()
+# Output:
+# Age    Salary
+# count  3.0    3.0
+# mean   21.0   60000.0
+# std    1.0    10000.0
+# min    20.0   50000.0
+# 25%    20.5   55000.0
+# 50%    21.0   60000.0
+# 75%    21.5   65000.0
+# max    22.0   70000.0
