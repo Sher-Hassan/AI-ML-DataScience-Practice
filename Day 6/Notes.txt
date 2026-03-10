@@ -1,3 +1,95 @@
+## Environment Setup
+It is always a good practice to start with creating a separate environment.
+...existing code...
+### Three Ways to Create Virtual Environments
+#### 1. Using venv Module
+python -m venv venv_name
+#### 2. Using virtualenv (Linux/PowerShell/Git Bash)
+pip install virtualenv
+virtualenv -p python3 venv_name
+#### 3. Using Anaconda (Recommended)
+conda create -p venv_name python==3.14 -y (you can use other versions)
+...existing code...
+## Python Modules and Packages
+Helps organize and reuse code.
+...existing code...
+## Python Standard Library Overview
+In Python, the standard library is a big collection of built-in modules that come with Python itself—no extra installs needed. Think of it as Python’s “batteries included” toolbox.
+...existing code...
+## Working with File Paths
+
+### Listing Directory Contents
+import os
+### Joining Paths
+import os
+dir_name = "folder"
+### Checking if File Exists
+import os
+path = 'example1.txt'
+### Checking if Path is File or Directory
+import os
+path = 'Notes.txt'
+### Getting Absolute Path
+relative_path = 'Notes.txt'
+absolute_path = os.path.abspath(relative_path)
+## Exception Handling
+
+### Basic try-except Block
+try:
+### Displaying the Error Type
+a = b
+# NameError: name 'b' is not defined
+### Catching Specific Exceptions
+try:
+    a = b
+### ZeroDivisionError Example
+try:
+    result = 1/0
+### Example with Multiple except Blocks
+try:
+    numb = int(input("Enter a value: "))
+### try, except, and else Block
+else will be executed only if try executes successfully without triggering any except block.
+try:
+### try, except, else, and finally Block
+Finally block is executed no matter what happens.
+try:
+## NumPy
+
+NumPy is a fundamental library for scientific computing in Python. It provides support for arrays and matrices, along with a collection of mathematical functions to operate on these data structures.
+...existing code...
+### Creating Arrays
+import numpy as np
+
+#### Create a 1D Array
+arr1 = np.array([1,2,3,4,5])
+#### Reshaping Arrays
+arr2 = np.array([1,2,3,4,5])
+arr2.reshape(1,5) # One row and five columns
+#### Creating 2D and 3D Arrays
+arr3 = np.array([[1,2,3,4,5]])
+print(arr3)
+### Array Attributes
+arr = np.array([[1, 2, 3], [4, 5, 6]])
+print("Array:\n", arr)
+### Vectorized Operations
+arr1 = np.array([1,2,3,4,5])
+arr2 = np.array([10,20,30,40,50])
+### Universal Functions
+arr = np.array([2,3,4,5,6])
+print(np.sqrt(arr))
+### Array Slicing and Indexing
+arr = np.array([[1,2,3,4], [5,6,7,8], [9,10,11,12]])
+print("Array : \n", arr)
+### Modifying Array Elements
+arr[0,0] = 100
+print(arr)
+### Statistical Concepts: Normalization
+arr = np.array([[1, 2, 3], [4, 5, 6]])
+data = np.array([1, 2, 3, 4, 5])
+### Statistical Operations
+data = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+mean = np.mean(data)
 1. It is always a good practice to start with creating a seperate environment. 
 - Open command prompt in terminal in VS Code
 - conda create -p venv python==3.14
@@ -659,3 +751,4 @@ df.describe()
 # 50%    21.0   60000.0
 # 75%    21.5   65000.0
 # max    22.0   70000.0
+
