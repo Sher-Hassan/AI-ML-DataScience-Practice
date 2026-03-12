@@ -899,4 +899,239 @@ pd.merge(df1, df2, on="Key", how="right")
 
 ---
 
+## 8. Reading Data From Different Sources
+
+---
+
+### 8.1 Reading Data from JSON — `.read_json()` and `.StringIO()`
+
+The flow is: **Read Data From JSON → Convert to String → Store**
+
+```python
+import pandas as pd
+from io import StringIO
+
+Data = '{"employee_name": "James", "email": "james@gmail.com", "job_profile": [{"title1":"Team Lead"}, {"title2": "Sr. Developer"}]}'
+df = pd.read_json(StringIO(Data))
+df
+```
+
+> **Result:**
+> ```
+>   employee_name            email              job_profile
+> 0         James  james@gmail.com   {'title1': 'Team Lead'}
+> 1         James  james@gmail.com  {'title2': 'Sr. Developer'}
+> ```
+
+---
+
+#### 8.1.1 Converting a DataFrame Back to JSON — `.to_json()`
+
+```python
+df.to_json()
+```
+
+> **Result:**
+> ```
+> '{"employee_name":{"0":"James","1":"James"},"email":{"0":"james@gmail.com","1":"james@gmail.com"},
+> "job_profile":{"0":{"title1":"Team Lead"},"1":{"title2":"Sr. Developer"}}}'
+> ```
+
+---
+
+#### 8.1.2 The `orient` Parameter in `.to_json()`
+
+The `orient` parameter determines the **format and structure** of the resulting JSON string.
+
+Since JSON is a flexible format, there are multiple ways to represent a table (rows and columns) in a nested string. Changing the `orient` changes how keys and values are paired up.
+
+##### 8.1.2.1 Common `orient` Options
+
+| Orient | Description | Best Use Case |
+|---|---|---|
+| `'records'` | A list of dictionaries: `[{column -> value}, ...]` | Web APIs — most frontend frameworks expect this |
+| `'split'` | A dictionary containing index, columns, and data | Preserve exact structure without repeating columns |
+| `'index'` | A dictionary of dictionaries: `{index -> {col:val}}` | Quick lookups by a specific ID or index |
+| `'columns'` | A dictionary of dictionaries: `{col -> {idx:val}}` | Default — optimized for column-based access |
+| `'values'` | Just the data in a nested list (no labels) | Minimal file size when labels aren't needed |
+| `'table'` | Includes a JSON schema (data types and index info) | High-integrity data transfer between pandas |
+
+##### 8.1.2.2 Code Examples
+
+```python
+import pandas as pd
+
+df = pd.DataFrame({
+    'Name': ['Alice', 'Bob'],
+    'Age':  [25, 30]
+})
+
+# 1. records — most common for web apps
+print(df.to_json(orient='records'))
+```
+
+> **Result:**
+> ```
+> [{"Name":"Alice","Age":25},{"Name":"Bob","Age":30}]
+> ```
+
+```python
+# 2. split — separates metadata from data
+print(df.to_json(orient='split'))
+```
+
+> **Result:**
+> ```
+> {"columns":["Name","Age"],"index":[0,1],"data":[["Alice",25],["Bob",30]]}
+> ```
+
+```python
+# 3. index — uses row index as the primary key
+print(df.to_json(orient='index'))
+```
+
+> **Result:**
+> ```
+> {"0":{"Name":"Alice","Age":25},"1":{"Name":"Bob","Age":30}}
+> ```
+
+> **When to use which?**
+> - Sending data to a **JavaScript app** → almost always use `orient='records'`
+> - **Saving to disk** to reopen in pandas later → use `orient='split'` or `'table'` (preserves index and column names more reliably)
+
+##### 8.1.2.3 Applying `orient` on Our DataFrame
+
+```python
+df.to_json(orient="index")
+```
+
+> **Result:**
+> ```
+> '{"0":{"employee_name":"James","email":"james@gmail.com","job_profile":{"title1":"Team Lead"}},
+>   "1":{"employee_name":"James","email":"james@gmail.com","job_profile":{"title2":"Sr. Developer"}}}'
+> ```
+
+```python
+df.to_json(orient="records")
+```
+
+> **Result:**
+> ```
+> '[{"employee_name":"James","email":"james@gmail.com","job_profile":{"title1":"Team Lead"}},
+>   {"employee_name":"James","email":"james@gmail.com","job_profile":{"title2":"Sr. Developer"}}]'
+> ```
+
+---
+
+### 8.2 Reading Data From a URL — `.read_csv(url)`
+
+```python
+df = pd.read_csv(
+    "https://archive.ics.uci.edu/ml/machine-learning-databases/wine/wine.data",
+    header=None
+)
+df.head()
+```
+
+> **Result:**
+> ```
+>    0      1     2     3     4    5     6     7     8     9     10    11    12    13
+> 0  1  14.23  1.71  2.43  15.6  127  2.80  3.06  0.28  2.29  5.64  1.04  3.92  1065
+> 1  1  13.20  1.78  2.14  11.2  100  2.65  2.76  0.26  1.28  4.38  1.05  3.40  1050
+> 2  1  13.16  2.36  2.67  18.6  101  2.80  3.24  0.30  2.81  5.68  1.03  3.17  1185
+> 3  1  14.37  1.95  2.50  16.8  113  3.85  3.49  0.24  2.18  7.80  0.86  3.45  1480
+> 4  1  13.24  2.59  2.87  21.0  118  2.80  2.69  0.39  1.82  4.32  1.04  2.93   735
+> ```
+
+> **Note:** `header=None` is used when the data file does **not** contain column names in the first row. Without it, pandas will automatically treat the first row of data as the column headers.
+
+#### 8.2.1 Converting Back to CSV
+
+```python
+df.to_csv("wine.csv")
+# New file wine.csv is created and stored with the df data
+```
+
+---
+
+### 8.3 Reading Data From HTML — `.read_html()`
+
+```python
+url = "https://www.fdic.gov/bank/individual/failed/banklist.html"
+df = pd.read_html(url)
+
+df[0]    # df[0] gives you the first table extracted from the website
+```
+
+> **Result:**
+> ```
+>                              Bank Name       City      State   Cert  ...  Closing Date   Fund
+> 0   Metropolitan Capital Bank & Trust    Chicago   Illinois  57488  ...  January 30, 2026  10550
+> 1       The Santa Anna National Bank  Santa Anna      Texas   5520  ...   June 27, 2025  10549
+> 2              Pulaski Savings Bank    Chicago   Illinois  28611  ...  January 17, 2025  10548
+> ...
+> 24    Seaway Bank and Trust Company    Chicago   Illinois  19328  ...  January 27, 2017  10524
+> ```
+
+#### 8.3.1 Another HTML Example — Wikipedia Table with Filters
+
+```python
+url = "https://en.wikipedia.org/wiki/Mobile_country_code"
+df = pd.read_html(
+    url,
+    match="Country",        # Only extract tables that contain the word "Country"
+    header=0,               # First row is the header
+    storage_options={"User-Agent": "Mozilla/5.0"}
+)
+df[0]
+```
+
+> **Result:**
+> ```
+>    Mobile country code          Country ISO 3166  ...  Remarks
+> 0                  289      A Abkhazia   GE-AB    ...  MCC is not listed by ITU
+> 1                  412      Afghanistan      AF   ...  NaN
+> 2                  276          Albania      AL   ...  NaN
+> ...
+> 251                648         Zimbabwe      ZW   ...  NaN
+> 252 rows × 6 columns
+> ```
+
+---
+
+### 8.4 Reading Data From Excel — `.read_excel()`
+
+```python
+df_excel = pd.read_excel('Data_excel.xlsx')
+df_excel
+```
+
+> **Result:**
+> ```
+>      Name  Age
+> 0    Sher   19
+> 1  Hassan   20
+> 2    Khan   21
+> ```
+
+---
+
+### 8.5 Pickle — Serializing Python Objects
+
+**Pickle** is primarily used for **serializing and deserializing** a Python object structure. In other words, it converts a Python object into a byte stream to:
+- Store it in a file / database
+- Maintain program state across sessions
+- Transport data over the network
+
+#### 8.5.1 Converting a DataFrame to a Pickle File
+
+```python
+df_excel.to_pickle('df_pickle')
+# File saved with the name: df_pickle
+```
+
+> **Note:** There are many more methods available under `.read_xxx()` and `.to_xxx()` in pandas for various file formats.
+
+---
+
 *End of Notes*

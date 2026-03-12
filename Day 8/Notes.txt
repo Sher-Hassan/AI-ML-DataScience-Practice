@@ -899,3 +899,129 @@ pd.merge(df1, df2, on="Key", how="right")
 
 ---
 
+# Reading Data From Different Sources
+
+## Reading Data from JSON (.read_json()) which is stringified (.StringIO())
+# Read Data From JSON -> Convert to String -> Store
+import pandas as pd
+from io import StringIO
+
+Data = '{"employee_name": "James", "email": "james@gmail.com", "job_profile": [{"title1":"Team Lead"}, {"title2": "Sr. Developer"}]}'
+df = pd.read_json(StringIO(Data))
+df
+employee_name	email	job_profile
+0	James	james@gmail.com	{'title1': 'Team Lead'}
+1	James	james@gmail.com	{'title2': 'Sr. Developer'}
+
+# Convert String to JSON (.to_json())
+# Using Prev Example
+df.to_json()
+'{"employee_name":{"0":"James","1":"James"},"email":{"0":"james@gmail.com","1":"james@gmail.com"},"job_profile":{"0":{"title1":"Team Lead"},"1":{"title2":"Sr. Developer"}}}'
+```
+
+The orient parameter in the to_json() method of a pandas DataFrame or Series determines the format and structure of the resulting JSON string.
+
+Since JSON is a flexible format, there are multiple ways to represent a table (rows and columns) in a nested string. Changing the orient changes how keys and values are paired up.
+
+### Common orient Options
+Here are the most frequently used values for orient, using a simple DataFrame with columns Name and Age as an example:
+
+| Orient   | Description                                         | Best Use Case                                      |
+|----------|-----------------------------------------------------|----------------------------------------------------|
+| 'records'| A list of dictionaries: [{column -> value}, ...]    | Web APIs. Most frontend frameworks expect this.    |
+| 'split'  | A dictionary containing index, columns, and data    | Preserve exact structure without repeating columns |
+| 'index'  | A dictionary of dictionaries: {index -> {col:val}}  | Quick lookups by a specific ID or index            |
+| 'columns'| A dictionary of dictionaries: {col -> {idx:val}}    | Default. Optimized for column-based access         |
+| 'values' | Just the data in a nested list (no labels)          | Minimal file size when labels aren't needed        |
+| 'table'  | Includes a JSON schema (data types and index info)  | High-integrity data transfer between pandas        |
+
+#### Code Examples
+To see the difference, let’s look at how the same data looks with different orientations:
+
+import pandas as pd
+
+df = pd.DataFrame({
+    'Name': ['Alice', 'Bob'],
+    'Age': [25, 30]
+})
+
+# 1. Records (The most common for web apps)
+# Result: [{"Name":"Alice","Age":25},{"Name":"Bob","Age":30}]
+print(df.to_json(orient='records'))
+
+# 2. Split (Separates metadata from data)
+# Result: {"columns":["Name","Age"],"index":[0,1],"data":[["Alice",25],["Bob",30]]}
+print(df.to_json(orient='split'))
+
+# 3. Index (Uses the row index as the primary key)
+# Result: {"0":{"Name":"Alice","Age":25},"1":{"Name":"Bob","Age":30}}
+print(df.to_json(orient='index'))
+
+Why does this matter?
+If you are sending data to a JavaScript application, you almost always want orient='records'. If you are saving a DataFrame to disk to be opened by pandas later, orient='split' or 'table' is often better because it preserves the index and column names more reliably.
+
+df.to_json(orient="index")
+'{"0":{"employee_name":"James","email":"james@gmail.com","job_profile":{"title1":"Team Lead"}},"1":{"employee_name":"James","email":"james@gmail.com","job_profile":{"title2":"Sr. Developer"}}}'
+df.to_json(orient="records")
+'[{"employee_name":"James","email":"james@gmail.com","job_profile":{"title1":"Team Lead"}},{"employee_name":"James","email":"james@gmail.com","job_profile":{"title2":"Sr. Developer"}}]'
+
+## Reading Data From URL
+df = pd.read_csv("https://archive.ics.uci.edu/ml/machine-learning-databases/wine/wine.data", header=None)
+# Note : In pandas, header=None is used when the data file you are loading does not contain column names in the very first row.
+# If you don't include this parameter, pandas will automatically assume the first row of your data is the "header" (the titles of the columns).
+df.head()
+0	1	2	3	4	5	6	7	8	9	10	11	12	13
+0	1	14.23	1.71	2.43	15.6	127	2.80	3.06	0.28	2.29	5.64	1.04	3.92	1065
+1	1	13.20	1.78	2.14	11.2	100	2.65	2.76	0.26	1.28	4.38	1.05	3.40	1050
+2	1	13.16	2.36	2.67	18.6	101	2.80	3.24	0.30	2.81	5.68	1.03	3.17	1185
+3	1	14.37	1.95	2.50	16.8	113	3.85	3.49	0.24	2.18	7.80	0.86	3.45	1480
+4	1	13.24	2.59	2.87	21.0	118	2.80	2.69	0.39	1.82	4.32	1.04	2.93	735
+# Converting back to csv
+df.to_csv("wine.csv")
+# New file wine.csv created which is stored with df
+
+## Reading Data From HTML
+url = "https://www.fdic.gov/bank/individual/failed/banklist.html"
+df = pd.read_html(url)
+df
+# df[0]: Gives you the first table extracted from the website.
+df[0]
+Bank Name	City	State	Cert	Acquiring Institution	Closing Date	Fund  Sort ascending
+0	Metropolitan Capital Bank & Trust	Chicago	Illinois	57488	First Independence Bank	January 30, 2026	10550
+1	The Santa Anna National Bank	Santa Anna	Texas	5520	Coleman County State Bank	June 27, 2025	10549
+2	Pulaski Savings Bank	Chicago	Illinois	28611	Millennium Bank	January 17, 2025	10548
+...existing code...
+24	Seaway Bank and Trust Company	Chicago	Illinois	19328	State Bank of Texas	January 27, 2017	10524
+
+# Another Example of Reading Data From HTML
+url = "https://en.wikipedia.org/wiki/Mobile_country_code"
+df = pd.read_html(
+    url,
+    match="Country",
+    header=0,
+    storage_options={"User-Agent": "Mozilla/5.0"}
+)
+df[0]
+Mobile country code	Country	ISO 3166	Mobile network codes	National MNC authority	Remarks
+0	289	A Abkhazia	GE-AB	List of mobile network codes in Abkhazia	NaN	MCC is not listed by ITU
+1	412	Afghanistan	AF	List of mobile network codes in Afghanistan	NaN	NaN
+2	276	Albania	AL	List of mobile network codes in Albania	NaN	NaN
+...existing code...
+251	648	Zimbabwe	ZW	List of mobile network codes in Zimbabwe	NaN	NaN
+252 rows × 6 columns
+
+## Reading Data From Excel Sheet
+df_excel = pd.read_excel('Data_excel.xlsx')
+df_excel
+Name	Age
+0	Sher	19
+1	Hassan	20
+2	Khan	21
+
+# Pickle in Python is primarily used in serializing and deserializing a Python object structure. In other words, it's the process of converting a Python object into a byte stream to store it in a file/database, maintain program state across sessions, or transport data over the network.
+
+# Converting to a Pickle file
+df_excel.to_pickle('df_pickle')
+# file saved as named df_pickle
+# There are so many more in .read_xxx etc
+
