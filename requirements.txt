@@ -4,3 +4,4 @@ pandas
 jupyter
 lxml
 openpyxl
+matplotlib
