@@ -1134,13 +1134,13 @@ df_excel.to_pickle('df_pickle')
 
 ---
 
-# Data Visualization With Matplotlib
+# 9. Data Visualization With Matplotlib
 
 > **"Matplotlib is a powerful plotting library for Python that enables the creation of static, animated, and interactive visualizations. It is widely used for data visualization in data science and machine learning."**
 
 ---
 
-## 1. Importing Matplotlib
+## 9.1 Importing Matplotlib
 
 ```python
 import matplotlib.pyplot as plt
@@ -1150,7 +1150,7 @@ import matplotlib.pyplot as plt
 
 ---
 
-## 2. Line Plot
+## 9.2 Line Plot
 
 ### Basic Line Plot
 
@@ -1228,7 +1228,7 @@ plt.grid(True)
 
 ---
 
-## 3. Multiple Plots (Subplots)
+## 9.3 Multiple Plots (Subplots)
 
 ```python
 # Sample data
@@ -1267,7 +1267,7 @@ plt.title("plot 4")
 
 ---
 
-## 4. Bar Plot
+## 9.4 Bar Plot
 
 ```python
 categories = ['A', 'B', 'C', 'D', 'E']
@@ -1287,7 +1287,7 @@ plt.show()
 
 ---
 
-## 5. Histograms
+## 9.5 Histograms
 
 > **"Histograms are used to represent the distribution of a dataset. They divide the data into bins and count the number of data points in each bin."**
 
@@ -1311,7 +1311,7 @@ plt.hist(data, bins=5, color='orange', edgecolor="black")
 
 ---
 
-## 6. Scatter Plot
+## 9.6 Scatter Plot
 
 > **"A scatter plot is a type of data visualization that uses dots to represent the values for two different variables. It is the go-to tool for identifying relationships or correlations between variables."**
 
@@ -1327,7 +1327,7 @@ plt.scatter(x, y, color="blue", marker="x")
 
 ---
 
-## 7. Pie Chart
+## 9.7 Pie Chart
 
 ```python
 labels  = ['A', 'B', 'C', 'D']
@@ -1349,7 +1349,7 @@ plt.pie(
 
 ---
 
-## 8. Practical Example — Sales Data Visualization
+## 9.8 Practical Example — Sales Data Visualization
 
 ```python
 import pandas as pd
@@ -1360,7 +1360,7 @@ sales_data_df.head()
 
 ---
 
-### 8.1 Total Sales by Item Type (Bar Chart)
+### 9.8.1 Total Sales by Item Type (Bar Chart)
 
 Let's group based on Item Type, sum the Total Revenue (which gives total sales), and then make a bar graph.
 
