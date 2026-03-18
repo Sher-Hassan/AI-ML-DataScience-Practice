@@ -2074,7 +2074,7 @@ logger.critical("Application is shutting down")
 
 ---
 
-# Logging With Multiple Loggers / Modules
+# 13. Logging With Multiple Loggers / Modules
 
 > **"You can create multiple loggers for different parts of your application."**
 
@@ -2082,7 +2082,7 @@ Instead of using the default `root` logger for everything, named loggers let eac
 
 ---
 
-## 1. Creating Multiple Loggers
+## 13.1 Creating Multiple Loggers
 
 Each logger is created with `logging.getLogger("name")` and can have its own level set independently.
 
@@ -2109,7 +2109,7 @@ logging.basicConfig(
 
 ---
 
-## 2. Logging Messages From Different Loggers
+## 13.2 Logging Messages From Different Loggers
 
 ```python
 logger1.debug("This is a debug message for module 1")
@@ -2130,7 +2130,7 @@ logger2.error("This is an error message for module 2")
 
 ---
 
-## 3. How Named Loggers Work
+## 13.3 How Named Loggers Work
 
 Each call to `logging.getLogger("name")` returns the **same logger object** if the name has been used before — loggers are singletons identified by name. This means you can safely import and reuse the same logger across multiple files.
 
@@ -2153,7 +2153,7 @@ This makes the logger name match the file path, so log output tells you exactly 
 
 ---
 
-## 4. Practical Example — Multiple Loggers in a Project
+## 13.4 Practical Example — Multiple Loggers in a Project
 
 ```python
 import logging
