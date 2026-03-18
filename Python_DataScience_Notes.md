@@ -1893,4 +1893,319 @@ connection.close()
 
 ---
 
+# 12. Python Logging
+
+> **"Logging is a crucial aspect of any application, providing a way to track events, errors, and operational information. Python's built-in logging module offers a flexible framework for emitting log messages from Python programs."**
+
+---
+
+## 12.1 Importing the Logging Module
+
+```python
+import logging
+```
+
+---
+
+## 12.2 Log Levels
+
+Python's `logging` module has several log levels indicating the **severity** of events. Listed from lowest to highest severity:
+
+| Level | Numeric Value | Description |
+|---|---|---|
+| `DEBUG` | 10 | Detailed information, typically of interest only when diagnosing problems |
+| `INFO` | 20 | Confirmation that things are working as expected |
+| `WARNING` | 30 | Something unexpected happened, or indicative of a problem in the near future (e.g. "disk space low"). Software is still working as expected |
+| `ERROR` | 40 | Due to a more serious problem, the software has not been able to perform some function |
+| `CRITICAL` | 50 | A very serious error, indicating that the program itself may be unable to continue running |
+
+> **Note:** When you set a level (e.g. `DEBUG`), all messages at **that level and above** will be shown. Setting `WARNING` means `DEBUG` and `INFO` messages will be suppressed.
+
+---
+
+## 12.3 Basic Logging Setup
+
+```python
+# Configure the basic logging settings
+logging.basicConfig(level=logging.DEBUG)  # There are other levels too
+
+# Log messages with different severity levels
+logging.debug("This is a debug message")
+logging.info("This is an info message")
+logging.warning("This is a warning message")
+logging.error("This is an error message")
+logging.critical("This is a critical message")
+```
+
+> **Result:**
+> ```
+> DEBUG:root:This is a debug message
+> INFO:root:This is an info message
+> WARNING:root:This is a warning message
+> ERROR:root:This is an error message
+> CRITICAL:root:This is a critical message
+> ```
+
+> **Note:** The format of each log line by default is `LEVEL:logger_name:message`. The logger name `root` is the default top-level logger.
+
+---
+
+## 12.4 Configuring Logging Format and Output File
+
+You can customize how log messages look and where they are saved using `basicConfig()` with additional parameters.
+
+```python
+logging.basicConfig(
+    filename='app.log',                          # Save logs to this file
+    filemode='w',                                # 'w' overwrites the file each run; use 'a' to append
+    level=logging.DEBUG,
+    format='%(asctime)s - %(name)s - %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S',
+    force=True   # Required if basicConfig() was already called earlier in the session
+                 # (logging does not allow re-configuration without force=True)
+)
+
+# Checking the output
+logging.debug("This is a debug message")
+logging.info("This is an info message")
+logging.warning("This is a warning message")
+logging.error("This is an error message")
+logging.critical("This is a critical message")
+```
+
+> **`format` placeholders:**
+> ```
+> %(asctime)s    — Timestamp of when the log was created
+> %(name)s       — Name of the logger (default: root)
+> %(levelname)s  — Log level name (DEBUG, INFO, WARNING, etc.)
+> %(message)s    — The actual log message
+> ```
+
+> **`datefmt`** uses standard `strftime` codes, e.g. `'%Y-%m-%d %H:%M:%S'` → `2024-01-15 09:30:00`
+
+---
+
+## 12.5 Configuring Logging with Handlers
+
+**Handlers** are the components that determine **where** your log messages actually go. You can attach multiple handlers to send logs to different destinations simultaneously.
+
+```python
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S',
+    handlers=[
+        logging.FileHandler("app1.log"),   # Writes log messages to app1.log file
+        logging.StreamHandler()            # Outputs log messages to the console (stdout)
+    ]
+)
+```
+
+> **Common Handlers:**
+> - `FileHandler(filename)` — writes logs to a file
+> - `StreamHandler()` — writes logs to the terminal / console
+> - Both can be used together so logs appear in the terminal **and** get saved to a file at the same time
+
+---
+
+## 12.6 Practical Example — Organizing Logs Into a Folder
+
+It is good practice to keep your logs organized in a dedicated `logs/` folder. Here is an example project structure:
+
+```
+📦 Day 11
+ ┣ 📂 logs
+ ┃ ┣ 📂 __pycache__
+ ┃ ┃ ┗ 📜 logger.cpython-314.pyc
+ ┃ ┣ 📜 app.log
+ ┃ ┣ 📜 logger.py       ← Central logger configuration
+ ┃ ┗ 📜 test.py         ← File that uses the logger
+ ┣ 📜 app.log
+ ┗ 📜 LoggingPracticalImplementation.ipynb
+```
+
+### `logger.py` — Central Logger Configuration
+
+Create a reusable logger in a dedicated file so any module in your project can import it:
+
+```python
+import logging
+import os
+
+# Ensure the logs directory exists
+os.makedirs('logs', exist_ok=True)
+
+logging.basicConfig(
+    filename='logs/app.log',
+    filemode='a',                    # Append mode — don't overwrite previous logs
+    level=logging.DEBUG,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S'
+)
+
+logger = logging.getLogger('MyAppLogger')
+```
+
+### `test.py` — Using the Logger
+
+```python
+from logger import logger
+
+logger.debug("App started")
+logger.info("Loading data...")
+logger.warning("Data file is missing a column")
+logger.error("Failed to connect to database")
+logger.critical("Application is shutting down")
+```
+
+---
+
+## Quick Reference — `basicConfig()` Parameters
+
+| Parameter | Purpose | Example |
+|---|---|---|
+| `level` | Minimum severity level to log | `logging.DEBUG` |
+| `filename` | Save logs to a file | `'app.log'` |
+| `filemode` | File write mode | `'w'` (overwrite) or `'a'` (append) |
+| `format` | Structure of each log line | `'%(asctime)s - %(levelname)s - %(message)s'` |
+| `datefmt` | Format for the timestamp | `'%Y-%m-%d %H:%M:%S'` |
+| `handlers` | List of output destinations | `[FileHandler(...), StreamHandler()]` |
+| `force` | Re-apply config even if already set | `True` |
+
+---
+
+# Logging With Multiple Loggers / Modules
+
+> **"You can create multiple loggers for different parts of your application."**
+
+Instead of using the default `root` logger for everything, named loggers let each module have its **own identity, severity level, and behavior** — making logs much easier to trace and filter in larger projects.
+
+---
+
+## 1. Creating Multiple Loggers
+
+Each logger is created with `logging.getLogger("name")` and can have its own level set independently.
+
+```python
+import logging
+
+# Create a logger for module1
+logger1 = logging.getLogger("module1")
+logger1.setLevel(logging.DEBUG)      # Captures DEBUG and above
+
+# Create a logger for module2
+logger2 = logging.getLogger("module2")
+logger2.setLevel(logging.WARNING)    # Captures WARNING and above only
+
+# Configure shared logging format
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S'
+)
+```
+
+> **Note:** `basicConfig()` sets the global format and the root logger's level. Each named logger's own `.setLevel()` overrides this for that specific logger — so `logger2` will ignore `DEBUG` and `INFO` messages even though the root is set to `DEBUG`.
+
+---
+
+## 2. Logging Messages From Different Loggers
+
+```python
+logger1.debug("This is a debug message for module 1")
+logger2.warning("This is a warning message for module 2")
+logger2.error("This is an error message for module 2")
+
+# Now instead of 'root', the module name appears in each log line
+```
+
+> **Result:**
+> ```
+> 2026-03-18 09:54:33 - module1 - DEBUG   - This is a debug message for module 1
+> 2026-03-18 09:54:33 - module2 - WARNING - This is a warning message for module 2
+> 2026-03-18 09:54:33 - module2 - ERROR   - This is an error message for module 2
+> ```
+
+> **Notice:** `logger2.debug(...)` or `logger2.info(...)` would produce **no output** because `logger2`'s level is set to `WARNING` — anything below that is silently ignored.
+
+---
+
+## 3. How Named Loggers Work
+
+Each call to `logging.getLogger("name")` returns the **same logger object** if the name has been used before — loggers are singletons identified by name. This means you can safely import and reuse the same logger across multiple files.
+
+```python
+# In any file across your project:
+logger = logging.getLogger("module1")   # Returns the same logger1 object as above
+```
+
+### Logger Naming Convention
+
+It is best practice to name loggers after the module they live in using `__name__`:
+
+```python
+# Inside myapp/database.py
+logger = logging.getLogger(__name__)
+# __name__ resolves to 'myapp.database' automatically
+```
+
+This makes the logger name match the file path, so log output tells you exactly which file generated each message.
+
+---
+
+## 4. Practical Example — Multiple Loggers in a Project
+
+```python
+import logging
+
+# Shared format
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S'
+)
+
+# Logger for data loading module — verbose, captures everything
+data_logger = logging.getLogger("data_loader")
+data_logger.setLevel(logging.DEBUG)
+
+# Logger for model training module — only important messages
+model_logger = logging.getLogger("model_trainer")
+model_logger.setLevel(logging.WARNING)
+
+# Logger for API module — errors only
+api_logger = logging.getLogger("api")
+api_logger.setLevel(logging.ERROR)
+
+# Usage
+data_logger.debug("Loading dataset from disk...")       # shown
+data_logger.info("Dataset loaded: 1000 rows")           # shown
+model_logger.debug("Starting epoch 1")                  # suppressed
+model_logger.warning("Validation loss is increasing")   # shown
+api_logger.info("Request received")                     # suppressed
+api_logger.error("Failed to serialize response")        # shown
+```
+
+> **Result:**
+> ```
+> 2026-03-18 09:54:33 - data_loader    - DEBUG   - Loading dataset from disk...
+> 2026-03-18 09:54:33 - data_loader    - INFO    - Dataset loaded: 1000 rows
+> 2026-03-18 09:54:33 - model_trainer  - WARNING - Validation loss is increasing
+> 2026-03-18 09:54:33 - api            - ERROR   - Failed to serialize response
+> ```
+
+---
+
+## Quick Reference — Single vs Multiple Loggers
+
+| | Root Logger | Named Logger |
+|---|---|---|
+| How to get | `logging.warning(...)` | `logging.getLogger("name")` |
+| Logger name in output | `root` | Your custom name |
+| Level control | Global only | Per-logger, independent |
+| Best for | Quick scripts | Multi-module applications |
+| Reusable across files | No | Yes — same name returns same object |
+
+---
+
 *End of Notes*
