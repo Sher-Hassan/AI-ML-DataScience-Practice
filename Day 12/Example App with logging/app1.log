@@ -1,0 +1,4 @@
+2026-03-18 10:15:59 - ArithemeticApp - DEBUG - Adding 10 + 15 = 25
+2026-03-18 10:15:59 - ArithemeticApp - DEBUG - Subtracting 25 - 3 = 22
+2026-03-18 10:15:59 - ArithemeticApp - DEBUG - Multiplying 10 * 3 = 30
+2026-03-18 10:15:59 - ArithemeticApp - DEBUG - Dividing 80 / 4 = 20.0
