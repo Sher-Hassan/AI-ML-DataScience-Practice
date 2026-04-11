@@ -6,3 +6,6 @@ lxml
 openpyxl
 matplotlib
 seaborn
+bs4
+requests
+beautifulsoup4
