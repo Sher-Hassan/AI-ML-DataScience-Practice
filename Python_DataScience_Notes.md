@@ -2424,4 +2424,679 @@ print(f"Finished in {finished_time:.4f} seconds")
 
 ---
 
+<div style="page-break-after: always;"></div>
+
+# 14.5 Multiprocessing
+
+---
+
+## 14.5.1 When to Use Multiprocessing
+
+Multiprocessing is best suited for:
+
+- **CPU-Bound Tasks** — tasks that are heavy on CPU usage (e.g. mathematical computations, data processing, image manipulation)
+- **Parallel Execution** — taking advantage of **multiple CPU cores** to run tasks truly simultaneously, not just concurrently
+
+> **Multithreading vs Multiprocessing:**
+> | | Multithreading | Multiprocessing |
+> |---|---|---|
+> | Best for | I/O-bound tasks (waiting on files, network) | CPU-bound tasks (heavy computation) |
+> | Runs on | Multiple threads, one process | Multiple separate processes |
+> | Memory | Shared between threads | Each process gets its own memory |
+> | GIL limitation | Yes — threads can't truly run in parallel | No — each process bypasses the GIL |
+> | Speed gain | When waiting/sleeping | When doing heavy computation |
+
+---
+
+## 14.5.2 Multiprocessing Example
+
+> **Important:** Multiprocessing code **must** be wrapped inside `if __name__ == "__main__":` — this prevents infinite spawning of child processes when the script is imported or re-run by each worker.
+
+```python
+import multiprocessing
+import time
+
+def square_numbers():
+    for i in range(5):
+        time.sleep(1)
+        print(f"Square: {i*i}")
+
+def cube_numbers():
+    for i in range(5):
+        time.sleep(1.5)
+        print(f"Cube: {i*i*i}")
+
+if __name__ == "__main__":
+
+    # Create 2 processes
+    p1 = multiprocessing.Process(target=square_numbers)
+    p2 = multiprocessing.Process(target=cube_numbers)
+    t = time.time()
+
+    # Start the processes
+    p1.start()
+    p2.start()
+
+    # Wait for both processes to complete
+    p1.join()
+    p2.join()
+
+    finished_time = time.time() - t
+    print(finished_time)
+```
+
+> **Note:** Multiprocessing cannot be run directly inside a Jupyter Notebook cell — it must be executed from a separate `.py` file. The output below is from running `multiprocessing_example.py` in the terminal.
+
+> **Result (executed in separate file):**
+> ```
+> Square: 0
+> Cube: 0
+> Square: 1
+> Square: 4
+> Cube: 1
+> Square: 9
+> Cube: 8
+> Square: 16
+> Cube: 27
+> Cube: 64
+> 7.582595586776733
+> ```
+
+> **Why ~7.5 seconds?** The two processes run in parallel on separate CPU cores, so the total time is driven by the **slower** process. `cube_numbers` does 5 iterations × 1.5s sleep = 7.5s. Compare this to sequential execution which would take 5×1 + 5×1.5 = **12.5 seconds**.
+
+---
+
+## 14.5.3 Key Multiprocessing Methods
+
+| Method / Class | Purpose |
+|---|---|
+| `multiprocessing.Process(target=fn)` | Create a new process that will run `fn` |
+| `p.start()` | Spawn and start the process |
+| `p.join()` | Block the main process until `p` finishes |
+| `p.is_alive()` | Returns `True` if the process is still running |
+| `multiprocessing.cpu_count()` | Returns the number of CPU cores available |
+
+---
+
+
+<div style="page-break-after: always;"></div>
+
+# 15. Using Pool Executor for Multithreading and Multiprocessing
+
+> **"Instead of manually creating, starting, and joining individual threads or processes (which is tedious and resource-heavy), you create a pool of workers that stay alive and check out tasks from a queue as they become available."**
+
+The `concurrent.futures` module provides a high-level, unified interface for both multithreading and multiprocessing through two executor classes: `ThreadPoolExecutor` and `ProcessPoolExecutor`.
+
+---
+
+## 15.1 Multithreading With `ThreadPoolExecutor`
+
+### 15.1.1 Basic Example
+
+```python
+from concurrent.futures import ThreadPoolExecutor
+import time
+
+def print_number(number):
+    time.sleep(1)
+    return f"Number: {number}"
+
+numbers = [1, 2, 3, 4, 5]
+
+with ThreadPoolExecutor(max_workers=3) as executor:
+    results = executor.map(print_number, numbers)
+
+for result in results:
+    print(result)
+```
+
+> **Result:**
+> ```
+> Number: 1
+> Number: 2
+> Number: 3
+> Number: 4
+> Number: 5
+> ```
+
+---
+
+### 15.1.2 Why Is This More Efficient?
+
+Think of it like a grocery store checkout:
+
+- **Sequential (normal for-loop):** One cashier scans each item one by one. Each item takes 1 second → total time = **5 seconds**.
+- **`ThreadPoolExecutor(max_workers=3)`:** The store opens 3 checkout lanes simultaneously.
+  - Items 1, 2, 3 are scanned in parallel at t=0
+  - At t=1s, those 3 are done → items 4 and 5 jump into the now-empty lanes
+  - At t=2s, everything is finished → total time = **~2 seconds**
+
+**The math:**
+- Sequential: 5 tasks × 1 second = **5 seconds**
+- With ThreadPoolExecutor (3 workers): **~2 seconds**
+
+---
+
+### 15.1.3 Breaking Down the Syntax
+
+#### `with ThreadPoolExecutor(max_workers=3) as executor:`
+
+This is a **context manager**.
+
+- `ThreadPoolExecutor(max_workers=3)` — initializes the pool and tells Python to keep a maximum of **3 threads** working at any given time
+- `with ... as executor:` — the safety net. As soon as the code block finishes, all threads are automatically cleaned up and shut down. Without `with`, you would have to manually call `executor.shutdown()`
+
+#### `results = executor.map(print_number, numbers)`
+
+This is the high-level way to distribute work across the pool.
+
+- Works exactly like Python's built-in `map(function, list)` — takes every item in `numbers` and feeds it into `print_number`
+- **Unlike** a regular `map`, it doesn't wait for item 1 to finish before starting item 2 — it hands items out to available workers as fast as possible
+- **Order is preserved** — `executor.map` always returns results in the original input order, even if a later task finishes before an earlier one
+
+---
+
+### 15.1.4 When Would Multithreading NOT Be Efficient?
+
+If you replace `time.sleep(1)` with a heavy CPU computation (like `number * 9999999`), `ThreadPoolExecutor` may not speed things up. This is because of Python's **GIL (Global Interpreter Lock)** — standard Python threads are great at *waiting* (I/O-bound tasks like downloading files or sleeping) but struggle to do heavy *computation* simultaneously.
+
+> **Rule of thumb:**
+> - I/O-bound (sleeping, network calls, file reads) → use **`ThreadPoolExecutor`**
+> - CPU-bound (heavy math, data processing) → use **`ProcessPoolExecutor`**
+
+---
+
+## 15.2 Multiprocessing With `ProcessPoolExecutor`
+
+### 15.2.1 How It Differs From ThreadPoolExecutor
+
+`ProcessPoolExecutor` bypasses the GIL entirely by spawning **entirely separate Python processes**, each with its own memory space and its own CPU core. This allows truly parallel computation — multiple tasks running at the **exact same instant** on different cores.
+
+```
+ThreadPoolExecutor  → multiple threads  → one process  → shares memory  → GIL applies
+ProcessPoolExecutor → multiple processes → own memory each → own CPU core → GIL bypassed
+```
+
+### 15.2.2 Basic Example
+
+```python
+from concurrent.futures import ProcessPoolExecutor
+import time
+
+def square_number(number):
+    time.sleep(1)
+    return f"Square: {number*number}"
+
+numbers = [1, 2, 3, 4, 5]
+
+with ProcessPoolExecutor(max_workers=3) as executor:
+    results = executor.map(square_number, numbers)
+
+for result in results:
+    print(result)
+```
+
+> **Note:** Like raw `multiprocessing`, `ProcessPoolExecutor` must be run from a `.py` file, not directly in a Jupyter Notebook cell.
+
+> **Result (executed in separate file):**
+> ```
+> Square: 1
+> Square: 4
+> Square: 9
+> Square: 16
+> Square: 25
+> ```
+
+---
+
+## 15.3 `ThreadPoolExecutor` vs `ProcessPoolExecutor` — Full Comparison
+
+| | `ThreadPoolExecutor` | `ProcessPoolExecutor` |
+|---|---|---|
+| Import | `concurrent.futures` | `concurrent.futures` |
+| Syntax | Identical | Identical |
+| Worker type | Threads | Separate processes |
+| Memory | Shared | Isolated per process |
+| GIL | Affected | Bypassed |
+| Best for | I/O-bound tasks | CPU-bound tasks |
+| Jupyter Notebook | Works | Must run in `.py` file |
+| Overhead | Low | Higher (process startup cost) |
+| Result order | Preserved by `map` | Preserved by `map` |
+
+---
+
+## 15.4 Quick Reference — `executor.map` vs Manual Threading
+
+| | Manual `threading.Thread` | `executor.map` |
+|---|---|---|
+| Setup | Create, start, join each thread manually | One line |
+| Worker limit | No built-in limit | Controlled by `max_workers` |
+| Result collection | Manual (use queues or shared lists) | Returned directly, in order |
+| Cleanup | Manual `join()` for each thread | Automatic via `with` block |
+| Code complexity | High | Low |
+
+---
+
+## 15.5 Real-World Practical Examples
+
+### 15.5.1 Multithreading for I/O-Bound Tasks — Web Scraping
+
+**Scenario:** Web scraping involves making numerous network requests to fetch web pages. These tasks are **I/O-bound** because they spend most of their time waiting for responses from servers. Multithreading significantly improves performance by allowing multiple pages to be fetched **concurrently** — while one thread waits for a server response, others keep working.
+
+```python
+import threading
+import requests
+from bs4 import BeautifulSoup
+
+urls = [
+    'https://docs.langchain.com/oss/python/deepagents/overview',
+    'https://docs.langchain.com/oss/python/langchain/overview',
+    'https://docs.langchain.com/oss/python/langgraph/overview'
+]
+
+def fetch_content(url):
+    response = requests.get(url)
+    soup = BeautifulSoup(response.content, 'html.parser')
+    print(f"Fetched {len(soup.text)} characters from {url}")
+
+threads = []
+
+for url in urls:
+    thread = threading.Thread(target=fetch_content, args=(url,))
+    threads.append(thread)
+    thread.start()
+
+for thread in threads:
+    thread.join()
+
+print("All web pages fetched...")
+```
+
+> **How it works:**
+> - A new thread is created for each URL and started immediately — all 3 requests go out nearly simultaneously
+> - `thread.join()` in the second loop ensures the main program waits for all threads to finish before printing the final message
+> - Without multithreading, the 3 requests would fire one after the other — total time = sum of all response times. With multithreading, total time ≈ the slowest single request
+
+> **Why not multiprocessing here?** Network requests spend almost all their time *waiting* — the CPU is barely involved. Spinning up separate processes would add overhead with no benefit. Threads are the right tool for this job.
+
+---
+
+### 15.5.2 Multiprocessing for CPU-Bound Tasks — Factorial Calculation
+
+**Scenario:** Factorial calculations for large numbers involve significant computational work — there is no waiting, just pure CPU crunching. Multiprocessing distributes the workload across **multiple CPU cores**, running calculations truly in parallel and cutting down overall time.
+
+```python
+import math
+import sys
+import time
+import multiprocessing
+
+sys.set_int_max_str_digits(100000)   # Allows printing very large integers without truncation
+
+def compute_factorial(number):
+    print(f"Computing factorial of {number}")
+    result = math.factorial(number)
+    print(f"Factorial of {number} computed")
+    return result
+
+if __name__ == "__main__":
+    numbers = [5000, 6000, 700, 8000]
+
+    start_time = time.time()
+
+    # Create a pool of worker processes — one per CPU core by default
+    with multiprocessing.Pool() as pool:
+        results = pool.map(compute_factorial, numbers)
+
+    end_time = time.time()
+
+    print(f"Results: {results}")
+    print(f"Time taken: {end_time - start_time} seconds")
+```
+
+> **Key points:**
+> - `multiprocessing.Pool()` creates a pool of worker processes equal to the number of CPU cores available on your machine (you can also pass an explicit number e.g. `Pool(4)`)
+> - `pool.map(compute_factorial, numbers)` distributes each number in the list to a different worker process — each core handles one factorial at the same time
+> - `sys.set_int_max_str_digits(100000)` is needed because Python limits how many digits it will print for very large integers by default — factorials of 5000+ have thousands of digits
+> - Must be run from a `.py` file (not a Jupyter Notebook cell) because of the `if __name__ == "__main__":` requirement
+
+> **Why not multithreading here?** Factorial computation is pure CPU work — no waiting involved. Python's GIL would prevent threads from running on separate cores simultaneously. Separate processes each get their own core and their own GIL, so they can truly run in parallel.
+
+---
+
+
+<div style="page-break-after: always;"></div>
+
+# 16. Python Memory Management
+
+> **"Memory management in Python involves a combination of automatic garbage collection, reference counting, and various internal optimizations to efficiently manage memory allocation and deallocation. Understanding these mechanisms can help developers write more efficient and robust applications."**
+
+---
+
+**Key Concepts Covered:**
+- Memory Allocation and Deallocation
+- Reference Counting
+- Garbage Collection
+- The `gc` Module
+- Memory Management Best Practices
+
+---
+
+## 16.1 Reference Counting
+
+**Reference counting** is the primary method Python uses to manage memory. Every object in Python maintains an internal count of how many references are pointing to it. When that count drops to **zero**, the memory occupied by the object is automatically deallocated.
+
+Use `sys.getrefcount(obj)` to inspect the reference count of any object.
+
+> **Note:** `getrefcount()` itself creates a temporary reference, so the count is always **+1** higher than you might expect.
+
+### Example — Watching the Reference Count Change
+
+```python
+import sys
+
+a = []
+# 2 references: one from 'a', one from getrefcount() itself
+print(sys.getrefcount(a))
+```
+
+> **Result:**
+> ```
+> 2
+> ```
+
+```python
+b = a
+# 3 references: 'a', 'b', and getrefcount()
+print(sys.getrefcount(b))
+```
+
+> **Result:**
+> ```
+> 3
+> ```
+
+```python
+del b
+# Back to 2: 'b' was deleted, only 'a' and getrefcount() remain
+print(sys.getrefcount(a))
+```
+
+> **Result:**
+> ```
+> 2
+> ```
+
+> **Key takeaway:** When the reference count drops to **0**, Python immediately frees the memory occupied by that object — no manual cleanup needed.
+
+---
+
+## 16.2 Garbage Collection
+
+Reference counting works well in most cases, but it has one weakness: **reference cycles**. A reference cycle occurs when two or more objects reference each other — their counts never reach zero even though nothing else in the program can reach them.
+
+> **Example of a cycle:** `obj1.ref = obj2` and `obj2.ref = obj1` — even after `del obj1` and `del obj2`, both objects still point to each other, so their counts never hit 0.
+
+Python solves this with a **cyclic garbage collector** (unlike some other languages that rely on destructors). Python's `gc` module handles detecting and cleaning up these unreachable cycles.
+
+### 16.2.1 The `gc` Module
+
+```python
+import gc
+
+# Enable garbage collection (on by default)
+gc.enable()
+
+# Disable garbage collection
+gc.disable()
+
+# Manually trigger garbage collection
+# Returns the number of unreachable objects collected
+gc.collect()
+```
+
+> **Result of `gc.collect()`:**
+> ```
+> 0
+> ```
+
+```python
+# Get per-generation garbage collection statistics
+print(gc.get_stats())
+```
+
+> **Result:**
+> ```
+> [
+>   {'collections': 0,  'collected': 0,    'uncollectable': 0},
+>   {'collections': 12, 'collected': 498,  'uncollectable': 0},
+>   {'collections': 2,  'collected': 3048, 'uncollectable': 0}
+> ]
+> ```
+
+> **What are generations?** Python's GC uses a **generational** approach with 3 generations (0, 1, 2). New objects start in generation 0. If they survive a collection cycle, they move up to generation 1, then 2. Older generations are checked less frequently — this is efficient because most short-lived objects die young.
+
+```python
+# Inspect objects that could not be collected (uncollectable garbage)
+print(gc.garbage)
+```
+
+> **Result:**
+> ```
+> []
+> ```
+
+---
+
+### 16.2.2 Handling Circular References
+
+```python
+import gc
+
+class MyObject:
+    def __init__(self, name):
+        self.name = name
+        print(f"Object {self.name} created")
+
+    def __del__(self):
+        print(f"Object {self.name} deleted")
+
+# Creating a circular reference — bad practice, leads to memory leaks
+obj1 = MyObject("obj1")
+obj2 = MyObject("obj2")
+obj1.ref = obj2    # obj1 points to obj2
+obj2.ref = obj1    # obj2 points back to obj1
+
+# Deleting our variables — but the cycle keeps both objects alive!
+del obj1
+del obj2
+
+# At this point the objects are NOT yet freed because of the cycle.
+# We must manually trigger the garbage collector to break the cycle.
+gc.collect()
+```
+
+> **Result:**
+> ```
+> Object obj1 created
+> Object obj2 created
+> Object obj1 deleted
+> Object obj2 deleted
+> ```
+
+> **Note:** After `del obj1` and `del obj2`, the `__del__` methods are NOT called immediately — Python can't free them because their reference counts are still > 0 due to the cycle. Only after `gc.collect()` are they properly detected and freed.
+
+---
+
+## 16.3 Memory Management Best Practices
+
+| Practice | Why It Matters |
+|---|---|
+| **Use local variables** | Local variables have a shorter lifespan and are freed sooner than global variables |
+| **Avoid circular references** | Cycles prevent reference counting from working — require GC to clean up |
+| **Use generators** | Produce items one at a time — only one item lives in memory at once |
+| **Explicitly delete objects** | Use `del` to free large objects proactively rather than waiting for GC |
+| **Profile memory usage** | Use `tracemalloc` or `memory_profiler` to find leaks and hotspots |
+
+### Why These Matter
+
+**Generators vs Lists:** If you're processing a million rows of data, a list loads all of them into RAM at once — which might crash your app. A generator acts like a **conveyor belt**, bringing you one item at a time so memory usage stays flat.
+
+**The power of `tracemalloc`:** It acts like a detective — it can tell you exactly which line of code is responsible for allocating the most memory, helping you find hidden leaks caused by circular references or large forgotten objects.
+
+**The `del` statement:** While Python is great at cleaning up after itself, using `del` is like proactively taking out the trash rather than waiting for the garbage truck. It's particularly useful for large datasets or image processing buffers.
+
+---
+
+## 16.4 Generators and the `yield` Keyword
+
+### What Is `yield`?
+
+The `yield` keyword turns a regular function into a **generator function**. Instead of computing all values at once and returning them in a list, a generator produces values **lazily** — one at a time, on demand.
+
+Key behaviours of `yield`:
+- The function's code is **not executed** when first called — it only runs when iterated
+- Execution is divided into steps, **one step per `yield`**
+- Unlike `return` (which stops the function entirely), `yield` **pauses** execution and resumes from where it left off on the next iteration
+- The return value of calling the function is an **iterator** — not a list
+
+### Example — Memory-Efficient Number Generator
+
+```python
+def generate_numbers(n):
+    for i in range(n):
+        yield i          # Produces one number at a time, pauses here
+
+# Using the generator — even for 100,000 numbers, only ONE integer is in memory at a time
+for num in generate_numbers(100000):
+    print(num)
+    if num > 10:
+        break
+```
+
+> **Result:**
+> ```
+> 0
+> 1
+> 2
+> 3
+> 4
+> 5
+> 6
+> 7
+> 8
+> 9
+> 10
+> 11
+> ```
+
+> **Memory comparison:**
+> ```python
+> # List — loads ALL 100,000 integers into RAM immediately
+> numbers = [i for i in range(100000)]
+>
+> # Generator — holds only the current integer in memory
+> numbers = generate_numbers(100000)
+> ```
+
+---
+
+## 16.5 Profiling Memory Usage With `tracemalloc`
+
+`tracemalloc` is a **built-in** Python library that traces memory allocations. It tells you exactly which lines of your code are using the most memory — essential for tracking down leaks and optimizing large applications.
+
+```python
+import tracemalloc
+
+def create_list():
+    return [i for i in range(10000)]
+
+def main():
+    tracemalloc.start()         # Begin tracing memory allocations
+
+    create_list()
+
+    snapshot = tracemalloc.take_snapshot()              # Capture current memory state
+    top_stats = snapshot.statistics('lineno')           # Sort by line number
+
+    print("[ Top 10 Memory Consumers ]")
+    for stat in top_stats[:10]:
+        print(stat)
+
+main()
+```
+
+> **Result (top entries — full output includes all allocations across the entire Python environment):**
+> ```
+> [ Top 10 Memory Consumers ]
+> inspect.py:2178:        size=304 KiB, count=11,  average=27.7 KiB
+> selectors.py:305:       size=144 KiB, count=3,   average=48.0 KiB
+> compilerop.py:174:      size=19.2 KiB, count=203, average=97 B
+> html.py:514:            size=18.1 KiB, count=228, average=82 B
+> inspect.py:2199:        size=13.8 KiB, count=40,  average=353 B
+> tracemalloc.py:193:     size=9408 B,   count=168, average=56 B
+> html.py:511:            size=6600 B,   count=3,   average=2200 B
+> socket.py:806:          size=6448 B,   count=124, average=52 B
+> html.py:835:            size=5814 B,   count=126, average=46 B
+> html.py:868:            size=5568 B,   count=60,  average=93 B
+> ```
+
+> **Reading the output:** Each line shows `file:line_number: size=X, count=Y, average=Z`.
+> - `size` — total memory allocated from that line
+> - `count` — number of individual allocations
+> - `average` — average size per allocation
+>
+> In a real project, you would filter for your own file paths to focus on your code's allocations rather than library internals.
+
+### `tracemalloc` Key Functions
+
+| Function | Purpose |
+|---|---|
+| `tracemalloc.start()` | Begin recording memory allocations |
+| `tracemalloc.take_snapshot()` | Capture a snapshot of current allocations |
+| `snapshot.statistics('lineno')` | Get allocations sorted by line number |
+| `snapshot.statistics('filename')` | Get allocations sorted by file |
+| `tracemalloc.stop()` | Stop tracing |
+| `tracemalloc.get_traced_memory()` | Returns `(current, peak)` memory in bytes |
+
+---
+
+
+<div style="page-break-after: always;"></div>
+
+## 16.6 Summary — Python Memory Management Flow
+
+```
+Object created
+      │
+      ▼
+Reference count = 1
+      │
+   +──┴──────────────────+
+   │  New reference added │  → count++
+   │  Reference deleted   │  → count--
+   +─────────────────────+
+      │
+   count == 0?
+   ┌──┴──┐
+  YES    NO
+   │      └──→ Object stays alive
+   ▼
+Memory freed immediately
+(unless part of a cycle)
+      │
+   Cycle?
+   ┌──┴──┐
+  YES    NO
+   │      └──→ Already freed above
+   ▼
+Cyclic GC detects
+unreachable group
+      │
+      ▼
+gc.collect() frees them
+```
+
+---
+
 *End of Notes*
