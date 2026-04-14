@@ -3321,4 +3321,116 @@ if __name__ == '__main__':
 
 ---
 
-*End of Notes*
+
+<div style="page-break-after: always;"></div>
+
+
+---
+
+## 17.7 Understanding Simple Flask App Skeleton
+
+Flask is a lightweight **WSGI web framework** in Python. Every Flask application starts with a basic skeleton.
+
+### Key Concepts
+
+- **WSGI** *(Web Server Gateway Interface)* — A standard interface between web servers and Python web applications.
+- **`Flask(__name__)`** — Creates an instance of the Flask class. The `__name__` parameter tells Flask where to look for the entry point of the application.
+- **`if __name__ == "__main__"`** — This block ensures the app runs only when the script is executed directly (not when imported).
+
+### Code
+
+```python
+from flask import Flask
+
+# WSGI Application
+app = Flask(__name__)
+# Creates an instance of the Flask class.
+# "__name__" is passed so Flask knows the entry point of the application.
+
+if __name__ == "__main__":  # Execution starts from here
+    app.run()
+```
+
+> **Note:** This is the **basic skeleton** of any Flask web application. Everything else builds on top of this structure.
+
+---
+
+## 17.8 Adding Routes to the Basic Skeleton
+
+**Routes** define the URLs of your web application and map them to Python functions.
+
+### Key Concepts
+
+- **`@app.route("/")`** — A **decorator** that binds a URL path to a function. The `"/"` path represents the **home page**.
+- **`debug=True`** — Enables **auto-restart** of the development server whenever code is updated. Without it, the server must be restarted manually after every change.
+- **`app.run()`** — Starts the **local development server**. Should **not** be used in production.
+
+### Code
+
+```python
+from flask import Flask
+
+app = Flask(__name__)
+
+# Home page route — equivalent to "google.com/"
+@app.route("/")
+def welcome():
+    return "Welcome to this Flask App"
+
+# Index page route
+@app.route("/index")
+def index():
+    return "Welcome to the index page"
+
+if __name__ == "__main__":
+    app.run(debug=True)
+    # debug=True → server auto-restarts on code changes
+```
+
+### `app.run()` Parameters
+
+| Parameter | Type | Description |
+|---|---|---|
+| `host` | `str \| None` | Hostname to listen on. Use `"0.0.0.0"` to make it externally visible. |
+| `port` | `int \| None` | Port number for the server. |
+| `debug` | `bool \| None` | Enables auto-reload and debugger. |
+| `load_dotenv` | `bool` | Loads environment variables from `.env` file. Default: `True`. |
+
+### Running the App
+
+```bash
+python ./routes.py
+```
+
+### Result
+
+```
+* Running on http://127.0.0.1:5000
+* Debug mode: on
+* Restarting with stat
+```
+
+> ⚠️ **Warning:** `app.run()` is for **development only**. It is not intended to meet the security and performance requirements of a production server. For production deployment, use a proper **WSGI server** (e.g., Gunicorn, uWSGI).
+
+---
+
+### Clean Version — Basic Skeleton + Routes (No Comments)
+
+```python
+from flask import Flask
+
+app = Flask(__name__)
+
+@app.route("/")
+def welcome():
+    return "Welcome to this Flask App"
+
+@app.route("/index")
+def index():
+    return "Welcome to the index page"
+
+if __name__ == "__main__":
+    app.run(debug=True)
+```
+
+---
