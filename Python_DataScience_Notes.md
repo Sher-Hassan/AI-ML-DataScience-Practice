@@ -3124,6 +3124,9 @@ Flask is built on two core components:
 
 Without WSGI, every web server (Apache, Nginx, IIS) would need to know the specific internal details of every Python framework (Flask, Django, FastAPI). WSGI solves this by defining a **single standard interface** between the two sides, so any WSGI-compatible server can work with any WSGI-compatible Python app.
 
+
+<div style="page-break-after: always;"></div>
+
 ### How It Works — Request Flow
 
 ```
@@ -3271,6 +3274,9 @@ if __name__ == '__main__':
 
 ---
 
+
+<div style="page-break-after: always;"></div>
+
 ## 17.5 Flask Architecture — Full Picture
 
 ```
@@ -3307,6 +3313,9 @@ if __name__ == '__main__':
 ```
 
 ---
+
+
+<div style="page-break-after: always;"></div>
 
 ## 17.6 Quick Reference — Flask Core Concepts
 
@@ -3364,6 +3373,9 @@ if __name__ == "__main__":  # Execution starts from here
 - **`@app.route("/")`** — A **decorator** that binds a URL path to a function. The `"/"` path represents the **home page**.
 - **`debug=True`** — Enables **auto-restart** of the development server whenever code is updated. Without it, the server must be restarted manually after every change.
 - **`app.run()`** — Starts the **local development server**. Should **not** be used in production.
+
+
+<div style="page-break-after: always;"></div>
 
 ### Code
 
