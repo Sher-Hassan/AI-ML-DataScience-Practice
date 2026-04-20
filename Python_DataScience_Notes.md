@@ -3445,4 +3445,265 @@ if __name__ == "__main__":
     app.run(debug=True)
 ```
 
+<div style="page-break-after: always;"></div>
+
+# 18. Flask — HTML Integration and HTTP Verbs
+
 ---
+
+## 18.1 Integrating HTML With a Flask Web App
+
+Flask gives you two ways to return HTML from a route. The right way uses `render_template()`.
+
+### Project Folder Structure
+
+For `render_template()` to work, your HTML files **must** be inside a folder named `templates/`, located in the same directory as your Flask app:
+
+```
+project/
+ ├── AddingHTMLtoFlask.py
+ └── templates/
+      ├── index.html
+      └── about.html
+```
+
+> **Note:** Flask looks for the `templates/` folder automatically — you never need to specify the path manually. This is a Flask convention.
+
+---
+
+### `AddingHTMLtoFlask.py`
+
+```python
+from flask import Flask, render_template
+
+app = Flask(__name__)
+
+
+@app.route("/")
+def welcome():
+    # Returning raw HTML directly — works but is NOT good practice
+    # Hard to maintain for anything more than a line or two
+    return "<html><h1>WELCOME</h1></html>"
+
+
+@app.route("/index")
+def index():
+    # Good practice — redirect to an HTML file using render_template()
+    # This uses the Jinja2 Template Engine under the hood
+    # Flask will look for 'index.html' inside the 'templates/' folder
+    return render_template('index.html')
+
+
+@app.route("/about")
+def about():
+    # Another example of render_template
+    return render_template('about.html')
+
+
+if __name__ == "__main__":
+    app.run(debug=True)
+```
+
+---
+
+### `templates/index.html`
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MY FLASK APP</title>
+</head>
+<body>
+    <h1>This is my own flask app</h1>
+</body>
+</html>
+```
+
+---
+
+### `templates/about.html`
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About Page</title>
+</head>
+<body>
+    <h1>This is my about page of flask app</h1>
+</body>
+</html>
+```
+
+---
+
+### Inline HTML vs `render_template()` — Comparison
+
+| | Inline HTML | `render_template()` |
+|---|---|---|
+| How | `return "<h1>Hello</h1>"` | `return render_template('page.html')` |
+| Maintainability | Poor — HTML buried in Python | Good — HTML lives in its own file |
+| Jinja2 support | No | Yes — dynamic data, loops, conditionals |
+| Good practice | ❌ | ✅ |
+| Use case | Quick one-liners only | Everything else |
+
+---
+
+## 18.2 Working With HTTP Verbs — GET and POST
+
+HTTP verbs (also called **HTTP methods**) define the *type* of action a request is making. Flask routes handle these via the `methods=[]` argument in `@app.route()`.
+
+### GET vs POST
+
+| | GET | POST |
+|---|---|---|
+| Purpose | Retrieve/display a page | Submit user input or trigger an action |
+| Data location | URL query string | Request body (hidden from URL) |
+| Use case | Loading a page, reading data | Login forms, search forms, submitting data |
+| Default in Flask | ✅ Yes — `methods=["GET"]` by default | Must be explicitly added |
+
+> **Default behaviour:** If you don't specify `methods=[]`, Flask sets it to `["GET"]` automatically.
+
+---
+
+### Project Folder Structure
+
+```
+project/
+ ├── getpost.py
+ └── templates/
+      ├── index.html
+      └── form.html
+```
+
+---
+
+### `getpost.py`
+
+```python
+from flask import Flask, render_template, request
+# 'request' is imported to access HTTP verb info and form data
+
+app = Flask(__name__)
+
+
+@app.route("/")
+def welcome():
+    return "<html><h1>WELCOME</h1></html>"
+
+
+@app.route("/index", methods=["GET"])
+# methods=["GET"] is the default — explicitly written here for clarity
+# GET is used to simply receive/display files without any user input
+def index():
+    return render_template('index.html')
+
+
+@app.route("/form", methods=["GET", "POST"])
+# This route handles BOTH methods:
+# GET  → user visits /form → show the empty HTML form
+# POST → user submits the form → process the input and respond
+def myform():
+    if request.method == "POST":
+        # request.form['name'] retrieves the value of the input
+        # field whose name attribute is "name" in the HTML form
+        name = request.form['name']
+        return f"HELLO {name}! WELCOMEEEE"
+    else:
+        # GET request — just render the form page
+        return render_template('form.html')
+
+
+if __name__ == "__main__":
+    app.run(debug=True)
+```
+
+---
+
+### `templates/form.html`
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My HTML Form</title>
+</head>
+<body>
+    <form method="post">
+        <label for="name">Name:</label><br>
+        <input type="text" id="name" name="name" required><br><br>
+        <input type="submit" value="Submit">
+    </form>
+</body>
+</html>
+```
+
+> **How the form connects to Flask:**
+> - `<form method="post">` — tells the browser to send a POST request when submitted
+> - `name="name"` on the input field — this is the key Flask reads with `request.form['name']`
+> - `required` — HTML-level validation, prevents submitting an empty field
+
+---
+
+<div style="page-break-after: always;"></div>
+
+### How the `/form` Route Works — Step by Step
+
+```
+User visits /form
+      │
+      ▼
+Browser sends GET request
+      │
+      ▼
+Flask: request.method == "GET"
+      │
+      ▼
+render_template('form.html')   ← Empty form shown to user
+      │
+User fills in name and clicks Submit
+      │
+      ▼
+Browser sends POST request (name="Sher" in body)
+      │
+      ▼
+Flask: request.method == "POST"
+      │
+      ▼
+name = request.form['name']    ← Reads "Sher" from POST body
+      │
+      ▼
+Returns: "HELLO Sher! WELCOMEEEE"
+```
+
+---
+
+## 18.3 Key Flask Imports — Summary
+
+| Import | What It Does |
+|---|---|
+| `Flask` | Creates the application instance |
+| `render_template` | Loads and renders an HTML file from `templates/` using Jinja2 |
+| `request` | Gives access to the incoming HTTP request — `request.method`, `request.form`, `request.args` |
+
+---
+
+## 18.4 `request` Object — Common Attributes
+
+| Attribute | Purpose | Example |
+|---|---|---|
+| `request.method` | The HTTP method of the current request | `"GET"` or `"POST"` |
+| `request.form['key']` | Read a value from a submitted HTML form (POST) | `request.form['name']` |
+| `request.args['key']` | Read a value from a URL query string (GET) | `/search?q=flask` → `request.args['q']` |
+| `request.json` | Read JSON data sent in the request body | Used in APIs |
+
+---
+
+*End of Notes*
