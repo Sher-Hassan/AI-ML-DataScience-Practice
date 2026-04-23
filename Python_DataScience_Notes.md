@@ -3652,8 +3652,6 @@ if __name__ == "__main__":
 
 ---
 
-<div style="page-break-after: always;"></div>
-
 ### How the `/form` Route Works — Step by Step
 
 ```
@@ -3685,17 +3683,247 @@ Returns: "HELLO Sher! WELCOMEEEE"
 
 ---
 
-## 18.3 Key Flask Imports — Summary
+## 18.3 PUT and DELETE — The Other HTTP Verbs
+
+Beyond GET and POST, two more HTTP verbs are essential when building APIs:
+
+### PUT — Update an Existing Resource
+
+**Purpose:** Replaces/updates an existing resource on the server.
+
+**Behaviour:** **Idempotent** — sending the exact same PUT request multiple times always produces the same result. No matter how many times you update a record with the same data, the end state is identical.
+
+**Analogy:** Overwriting a file on your computer with a new version of the same file.
+
+```python
+@app.route('/items/<int:item_id>', methods=['PUT'])
+def update_item(item_id):
+    ...
+```
+
+### DELETE — Remove a Resource
+
+**Purpose:** Permanently removes a specific resource from the server.
+
+**Behaviour:** Also **idempotent** — once a resource is deleted, sending the same request again changes nothing (it's already gone).
+
+**Analogy:** Moving a file to the trash and emptying it.
+
+```python
+@app.route('/items/<int:item_id>', methods=['DELETE'])
+def delete_item(item_id):
+    ...
+```
+
+### All Four HTTP Verbs — Full Summary
+
+| Verb | Purpose | Idempotent | Flask Use Case |
+|---|---|---|---|
+| `GET` | Retrieve / read data | ✅ Yes | Fetch a page or a resource |
+| `POST` | Create a new resource | ❌ No — repeating creates duplicates | Submit a form, add an item |
+| `PUT` | Update an existing resource | ✅ Yes | Edit an item by ID |
+| `DELETE` | Remove a resource | ✅ Yes | Delete an item by ID |
+
+---
+
+## 18.4 Working With APIs and JSON
+
+When building a **REST API** with Flask, instead of rendering HTML pages you return **JSON** — a lightweight data format that any frontend, mobile app, or external service can consume.
+
+### Key imports for API work
+
+```python
+from flask import Flask, jsonify, request
+```
+
+| Import | Purpose |
+|---|---|
+| `jsonify()` | Converts a Python dict or list into a proper JSON HTTP response with the correct `Content-Type: application/json` header |
+| `request.json` | Reads the JSON body sent in an incoming POST or PUT request |
+| `request.json.get('key', default)` | Safely reads a key from the JSON body — returns `default` if the key is missing instead of throwing an error |
+
+### JSON vs HTML Responses
+
+| | HTML Response | JSON Response |
+|---|---|---|
+| Function | `render_template('page.html')` | `jsonify(data)` |
+| Consumed by | Browser | Frontend JS, mobile apps, other APIs |
+| Format | HTML markup | `{"key": "value"}` |
+| Use case | Web pages | REST APIs |
+
+---
+
+## 18.5 Mini Project — To-Do List REST API
+
+This project puts all four HTTP verbs together in one Flask app. It is a pure API — every route returns JSON instead of rendering HTML.
+
+### Project Structure
+
+```
+project/
+ └── api.py
+```
+
+### `api.py` — Full To-Do App
+
+```python
+from flask import Flask, jsonify, request
+
+app = Flask(__name__)
+
+# In-memory data store — acts as our "database" for this example
+items = [
+    {"id": 1, "name": "Item 1", "description": "This is item 1"},
+    {"id": 2, "name": "Item 2", "description": "This is item 2"}
+]
+
+
+@app.route('/')
+def home():
+    return "Welcome To the Sample To Do List App"
+
+
+# ── GET: Retrieve all items ────────────────────────────────────────────────
+
+@app.route("/items", methods=['GET'])
+def get_items():
+    return jsonify(items)
+    # Returns the full items list as a JSON array
+
+
+# ── GET: Retrieve a specific item by ID ───────────────────────────────────
+
+@app.route("/items/<int:item_id>", methods=['GET'])
+def get_item(item_id):
+    # next() searches the list for the first item matching the condition
+    # The second argument (None) is the default if nothing is found
+    item = next((item for item in items if item["id"] == item_id), None)
+    if item is None:
+        return jsonify({"error": "Item not found"})
+    return jsonify(item)
+
+
+# ── POST: Create a new item ────────────────────────────────────────────────
+
+@app.route("/items", methods=['POST'])
+def create_item():
+    if not request.json or 'name' not in request.json:
+        return jsonify({"error": "Item not found"})
+
+    new_item = {
+        "id": items[-1]["id"] + 1 if items else 1,  # Auto-increment ID from last item
+        "name": request.json['name'],
+        "description": request.json['description']
+    }
+    items.append(new_item)
+    return jsonify(new_item)
+
+
+# ── PUT: Update an existing item ───────────────────────────────────────────
+
+@app.route('/items/<int:item_id>', methods=['PUT'])
+def update_item(item_id):
+    item = next((item for item in items if item["id"] == item_id), None)
+    if item is None:
+        return jsonify({"error": "Item not found"})
+
+    # .get(key, default) — safely reads the key from incoming JSON.
+    # First argument: the key to look for in the request body.
+    # Second argument: the fallback default — keeps the existing value
+    #                  if the key is missing from the request.
+    item["name"]        = request.json.get("name", item["name"])
+    item["description"] = request.json.get("description", item["description"])
+    return jsonify(item)
+
+
+# ── DELETE: Remove an item ─────────────────────────────────────────────────
+
+@app.route('/items/<int:item_id>', methods=['DELETE'])
+def delete_item(item_id):
+    global items
+    # Rebuild the list excluding the item with the matching ID
+    items = [item for item in items if item["id"] != item_id]
+    return jsonify({"result": "Item deleted"})
+
+
+if __name__ == '__main__':
+    app.run(debug=True)
+```
+
+---
+
+### Route Map — All API Endpoints
+
+| Method | URL | Action | Request Body |
+|---|---|---|---|
+| `GET` | `/items` | Return all items | None |
+| `GET` | `/items/<id>` | Return one item by ID | None |
+| `POST` | `/items` | Create a new item | `{"name": "...", "description": "..."}` |
+| `PUT` | `/items/<id>` | Update an existing item | `{"name": "...", "description": "..."}` |
+| `DELETE` | `/items/<id>` | Delete an item by ID | None |
+
+---
+
+### How Each Route Works
+
+#### `GET /items`
+Returns the full `items` list as a JSON array. No input needed.
+
+```json
+[
+  {"id": 1, "name": "Item 1", "description": "This is item 1"},
+  {"id": 2, "name": "Item 2", "description": "This is item 2"}
+]
+```
+
+#### `GET /items/1`
+Uses `next()` with a generator expression to find the first item whose `id` matches. Returns `{"error": "Item not found"}` if nothing matches.
+
+#### `POST /items`
+Reads `request.json` for `name` and `description`. Auto-generates the new ID by taking the last item's ID and adding 1. Appends the new item to the list.
+
+```json
+// Request body sent by the client:
+{"name": "Item 3", "description": "This is item 3"}
+
+// Response:
+{"id": 3, "name": "Item 3", "description": "This is item 3"}
+```
+
+#### `PUT /items/1`
+Finds the item by ID, then uses `.get(key, default)` to update only the fields that were sent — if a field is missing from the request, the existing value is preserved.
+
+```json
+// Request body — only updating the name:
+{"name": "Updated Item 1"}
+
+// Response — description unchanged:
+{"id": 1, "name": "Updated Item 1", "description": "This is item 1"}
+```
+
+#### `DELETE /items/1`
+Uses a list comprehension to rebuild `items` excluding the target ID. Returns a confirmation JSON object.
+
+```json
+{"result": "Item deleted"}
+```
+
+---
+
+## 18.6 Key Flask Imports — Summary
 
 | Import | What It Does |
 |---|---|
 | `Flask` | Creates the application instance |
 | `render_template` | Loads and renders an HTML file from `templates/` using Jinja2 |
-| `request` | Gives access to the incoming HTTP request — `request.method`, `request.form`, `request.args` |
+| `request` | Gives access to the incoming HTTP request — `request.method`, `request.form`, `request.args`, `request.json` |
+| `jsonify` | Converts a Python dict or list into a JSON HTTP response — used in APIs instead of `render_template` |
+| `redirect` | Sends the browser to a different URL |
+| `url_for` | Builds a URL for a given route function by its function name |
 
 ---
 
-## 18.4 `request` Object — Common Attributes
+## 18.7 `request` Object — Common Attributes
 
 | Attribute | Purpose | Example |
 |---|---|---|
