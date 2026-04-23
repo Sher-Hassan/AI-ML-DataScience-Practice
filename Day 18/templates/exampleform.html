@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Marks Form</title>
+    <style>
+        body { font-family: sans-serif; margin: 50px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: inline-block; width: 100px; }
+        input { padding: 5px; width: 200px; }
+        button { padding: 10px 20px; background-color: #007BFF; color: white; border: none; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+    <h2>Enter Marks for 5 Subjects</h2>
+    
+    <form id="marksForm" action="/calculate" method="POST">
+        
+        <div class="form-group">
+            <label for="maths">Maths:</label>
+            <input type="number" id="maths" name="maths" required min="0" max="100">
+        </div>
+
+        <div class="form-group">
+            <label for="science">Science:</label>
+            <input type="number" id="science" name="science" required min="0" max="100">
+        </div>
+
+        <div class="form-group">
+            <label for="english">English:</label>
+            <input type="number" id="english" name="english" required min="0" max="100">
+        </div>
+
+        <div class="form-group">
+            <label for="history">History:</label>
+            <input type="number" id="history" name="history" required min="0" max="100">
+        </div>
+
+        <div class="form-group">
+            <label for="geography">Geography:</label>
+            <input type="number" id="geography" name="geography" required min="0" max="100">
+        </div>
+        
+        <button type="submit" id="submitBtn">Calculate Result</button>
+    </form>
+
+</body>
+</html>

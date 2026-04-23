@@ -3706,4 +3706,427 @@ Returns: "HELLO Sher! WELCOMEEEE"
 
 ---
 
+<div style="page-break-after: always;"></div>
+
+# 19. Dynamic URLs, Variable Rules, and Jinja2 Template Engine
+
+This section builds on the previous Flask topics and covers:
+- Routing forms using `action=` in HTML
+- Variable rules in URL routes
+- Passing data from Flask into HTML templates using Jinja2
+- Jinja2 template syntax — expressions, statements, comments
+- Redirecting between routes using `redirect()` and `url_for()`
+
+---
+
+## 19.1 Routing a Form With `action=`
+
+In HTML, a `<form>` element's `action` attribute is another way to point a form submission at a specific Flask route — as an alternative to matching the current page's URL.
+
+```html
+<!-- Instead of just method="post", you can specify exactly which route to hit -->
+<form action="/submit" method="post">
+    ...
+</form>
+```
+
+```python
+# Flask side — the route the form posts to
+@app.route("/submit", methods=["GET", "POST"])
+def myform():
+    if request.method == "POST":
+        name = request.form['name']
+        return f"HELLO {name}! WELCOMEEEE"
+    else:
+        return render_template('form.html')
+```
+
+> **Note:** `action="/routeName"` in the HTML form element directly maps to `@app.route("/routeName")` in Flask. If `action` is omitted, the form posts back to the current page's URL.
+
+---
+
+## 19.2 Variable Rules in URL Routes
+
+Flask allows you to capture **dynamic segments** from the URL and pass them directly into your view function as arguments. These are called **variable rules**.
+
+### Basic Variable Rule
+
+```python
+@app.route("/success/<score>")
+def success(score):
+    return f"The marks you got is {score}"
+    # score is captured as a string by default
+```
+
+### Variable Rule With Type Converter
+
+```python
+# Adding a type — <int:score> converts the URL segment to an integer automatically
+@app.route("/success/<int:score>")
+def success(score):
+    return f"The marks you got is {score} and in string it is " + str(score)
+    # We can also type cast if needed
+```
+
+> **Supported type converters:**
+
+| Converter | Type | Example URL |
+|---|---|---|
+| `<name>` | `string` (default) | `/user/sher` |
+| `<int:name>` | `int` | `/score/85` |
+| `<float:name>` | `float` | `/price/9.99` |
+| `<path:name>` | `string` with slashes | `/files/folder/file.txt` |
+
+---
+
+## 19.3 Passing Data From Flask Into an HTML Template
+
+Variable rules become powerful when combined with `render_template()` — you capture a value from the URL, process it in Python, and pass the result into an HTML file.
+
+```python
+@app.route("/success/<int:score>")
+def success(score):
+    res = ""
+    if score >= 50:
+        res = "PASS"
+    else:
+        res = "FAIL"
+
+    # 'results' is a custom variable name — it is created here and passed to result.html
+    # Inside result.html, {{ results }} will print its value using Jinja2
+    return render_template('result.html', results=res)
+```
+
+### `templates/result.html`
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Result</title>
+</head>
+<body>
+    <h1>
+        <!-- 'results' variable is accessed here from Flask using the Jinja2 template engine -->
+        Based on the marks you have: {{ results }}
+    </h1>
+</body>
+</html>
+```
+
+> **How it connects:** `render_template('result.html', results=res)` — the keyword argument `results=res` creates a variable called `results` that is available inside `result.html`. Any name you choose on the left side of `=` becomes accessible in the template via `{{ results }}`.
+
+---
+
+## 19.4 Jinja2 Template Syntax
+
+Jinja2 uses three types of special tags inside HTML files:
+
+| Tag | Purpose | Example |
+|---|---|---|
+| `{{ ... }}` | **Expression** — prints/outputs a value | `{{ results }}` |
+| `{% ... %}` | **Statement** — conditions, loops, blocks | `{% if score >= 50 %}` |
+| `{# ... #}` | **Comment** — not rendered in the browser | `{# This is a comment #}` |
+
+---
+
+## 19.5 Using Conditions and Loops in Templates
+
+When you need to pass **multiple values** to a template, pack them into a dictionary and pass the whole dict as one variable. Inside the template, use Jinja2 `{% for %}` and `{% if %}` statements to work with the data.
+
+### Flask — Passing a Dictionary to the Template
+
+```python
+@app.route("/successres/<int:score>")
+def successres(score):
+    res = ""
+    if score >= 50:
+        res = "PASS"
+    else:
+        res = "FAIL"
+
+    # Pack multiple values into a dictionary
+    exp = {'score': score, 'res': res}
+
+    # Pass the dictionary as 'results' — accessed in index1.html via results.score, results.res
+    # or iterated with results.items() in a for loop
+    return render_template('index1.html', results=exp)
+```
+
+### `templates/index1.html`
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>MY FLASK APP</title>
+</head>
+<body>
+    <h2>My Final Results</h2>
+
+    <table border="2">
+
+        {# For loop — iterates over the dictionary key-value pairs #}
+        {% for key, value in results.items() %}
+        <tr>
+            {# Using comments inside Jinja2 #}
+            <th>{{ key }}</th>
+            <tr>{{ value }}</tr>
+        </tr>
+        {% endfor %}
+
+        {# If-else — checks the score value from the dictionary #}
+        {% if results.score >= 50 %}
+            <h1>CONGRATS! You have passed with {{ results.score }} marks</h1>
+        {% else %}
+            <h1>You have failed with {{ results.score }} marks</h1>
+        {% endif %}
+
+    </table>
+</body>
+</html>
+```
+
+> **Key points about this template:**
+> - `results.items()` — works like Python's `dict.items()`, giving you `(key, value)` pairs to loop over
+> - `results.score` — dot notation accesses a dictionary key from inside a Jinja2 template
+> - `{% endfor %}` and `{% endif %}` are required closing tags in Jinja2 — unlike Python's indentation-based blocks
+
+---
+
+## 19.6 `redirect()` and `url_for()`
+
+In Flask's backend, `redirect()` and `url_for()` are used to **programmatically send the user to a different route** after processing — and optionally pass data along with the redirect.
+
+```python
+from flask import redirect, url_for
+
+# redirect(url_for('route_function_name', param=value))
+return redirect(url_for("successmarks", score=total_score))
+```
+
+| Function | Purpose |
+|---|---|
+| `redirect(url)` | Sends the browser to a different URL |
+| `url_for('function_name')` | Builds the URL for a given route function by its **function name** (not its path string) |
+| `url_for('fn', key=val)` | Also passes URL parameters to the target route |
+
+> **Why use `url_for()` instead of hardcoding the URL?**
+> If you ever change a route's path (e.g. from `/successmarks` to `/results`), `url_for()` updates automatically everywhere. Hardcoding `"/successmarks"` would require finding and updating every string manually.
+
+---
+
+## 19.7 Full Practical Example — Student Marks Calculator
+
+This example brings everything together: a form, POST handling, URL variable rules, `redirect()`, `url_for()`, and Jinja2 conditions and loops.
+
+### Project Folder Structure
+
+```
+project/
+ ├── jinja.py
+ └── templates/
+      ├── exampleform.html
+      └── index1.html
+```
+
+### Flow
+
+```
+User visits /marksform
+      │
+      ▼
+GET → render exampleform.html   (5 subject input fields)
+      │
+User fills in marks and clicks Submit
+      │
+      ▼
+POST → /calculate
+      │
+Flask reads: maths, science, english, history, geography
+Calculates: total_score = average of 5 subjects
+      │
+      ▼
+redirect(url_for("successmarks", score=total_score))
+      │
+      ▼
+GET → /successmarks/<int:score>
+      │
+Flask: score >= 50 → "PASS", else → "FAIL"
+Builds dict: {'score': score, 'res': res}
+      │
+      ▼
+render_template('index1.html', results=exp)
+      │
+      ▼
+Jinja2 loops over dict, renders PASS/FAIL with score
+```
+
+---
+
+### `jinja.py`
+
+```python
+from flask import Flask, render_template, request, redirect, url_for
+
+app = Flask(__name__)
+
+
+@app.route("/marksform", methods=["GET", "POST"])
+def marksform():
+    # Just renders the marks input form — no POST logic needed here
+    # The form posts directly to /calculate via action="/calculate"
+    return render_template("exampleform.html")
+
+
+@app.route("/calculate", methods=["GET", "POST"])
+def calculate():
+    total_score = 0
+    if request.method == 'POST':
+        # Read each subject mark from the form — convert to float for division
+        maths      = float(request.form['maths'])
+        science    = float(request.form['science'])
+        english    = float(request.form['english'])
+        history    = float(request.form['history'])
+        geography  = float(request.form['geography'])
+
+        # Calculate the average score across 5 subjects
+        total_score = (maths + science + english + history + geography) / 5
+
+    # Redirect to the results route, passing the score as a URL variable
+    # url_for() builds the URL for the 'successmarks' function with score= injected
+    return redirect(url_for("successmarks", score=total_score))
+
+
+@app.route("/successmarks/<int:score>")
+def successmarks(score):
+    res = ""
+    if score >= 50:
+        res = "PASS"
+    else:
+        res = "FAIL"
+
+    # Pack both values into a dictionary and pass to the template
+    exp = {'score': score, 'res': res}
+    return render_template('index1.html', results=exp)
+
+
+if __name__ == "__main__":
+    app.run(debug=True)
+```
+
+---
+
+### `templates/exampleform.html`
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Student Marks Form</title>
+    <style>
+        body { font-family: sans-serif; margin: 50px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: inline-block; width: 100px; }
+        input { padding: 5px; width: 200px; }
+        button { padding: 10px 20px; background-color: #007BFF; color: white; border: none; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h2>Enter Marks for 5 Subjects</h2>
+
+    <!-- action="/calculate" sends the POST directly to the /calculate route -->
+    <form id="marksForm" action="/calculate" method="POST">
+
+        <div class="form-group">
+            <label for="maths">Maths:</label>
+            <input type="number" id="maths" name="maths" required min="0" max="100">
+        </div>
+
+        <div class="form-group">
+            <label for="science">Science:</label>
+            <input type="number" id="science" name="science" required min="0" max="100">
+        </div>
+
+        <div class="form-group">
+            <label for="english">English:</label>
+            <input type="number" id="english" name="english" required min="0" max="100">
+        </div>
+
+        <div class="form-group">
+            <label for="history">History:</label>
+            <input type="number" id="history" name="history" required min="0" max="100">
+        </div>
+
+        <div class="form-group">
+            <label for="geography">Geography:</label>
+            <input type="number" id="geography" name="geography" required min="0" max="100">
+        </div>
+
+        <button type="submit" id="submitBtn">Calculate Result</button>
+    </form>
+</body>
+</html>
+```
+
+> **How the form connects to Flask:** The `name` attribute on each `<input>` (e.g. `name="maths"`) is the exact key used in `request.form['maths']` on the Flask side. They must match.
+
+---
+
+### `templates/index1.html`
+
+*(same file as shown in section 19.5 — reused here as the results page)*
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>MY FLASK APP</title>
+</head>
+<body>
+    <h2>My Final Results</h2>
+
+    <table border="2">
+
+        {# Loop over the results dictionary and render each key-value as a table row #}
+        {% for key, value in results.items() %}
+        <tr>
+            <th>{{ key }}</th>
+            <tr>{{ value }}</tr>
+        </tr>
+        {% endfor %}
+
+        {# Conditional — show different message based on score #}
+        {% if results.score >= 50 %}
+            <h1>CONGRATS! You have passed with {{ results.score }} marks</h1>
+        {% else %}
+            <h1>You have failed with {{ results.score }} marks</h1>
+        {% endif %}
+
+    </table>
+</body>
+</html>
+```
+
+---
+
+## 19.8 Quick Reference — Jinja2 + Flask Dynamic Routing
+
+| Feature | Syntax | Example |
+|---|---|---|
+| URL variable | `<varname>` | `@app.route("/user/<name>")` |
+| URL variable with type | `<type:varname>` | `@app.route("/score/<int:score>")` |
+| Pass data to template | `render_template('page.html', key=val)` | `render_template('result.html', results=res)` |
+| Output a value in HTML | `{{ variable }}` | `{{ results.score }}` |
+| If condition in HTML | `{% if %} ... {% endif %}` | `{% if results.score >= 50 %}` |
+| For loop in HTML | `{% for %} ... {% endfor %}` | `{% for k, v in results.items() %}` |
+| Comment in HTML | `{# comment #}` | `{# This won't render #}` |
+| Redirect to a route | `redirect(url_for('fn', key=val))` | `redirect(url_for("successmarks", score=80))` |
+
+---
+
 *End of Notes*

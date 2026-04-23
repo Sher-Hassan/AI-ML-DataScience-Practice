@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MY FLASK APP</title>
+</head>
+<body>
+    <h2>My Final Results</h2>
+
+    <table border=2>
+
+        {# For loop example #}
+
+        {% for key,value in results.items() %}
+        <tr>
+            {# Using Comments #}
+            <th>{{ key }}</th>
+            <tr>{{ value }}</tr>
+        </tr>
+        {% endfor %}
+
+        {# if else example #}
+
+        {% if results.score >= 50 %}
+
+        <h1> CONGRATS You have passed with {{results.score}} marks</h1>
+
+        {% else %}
+
+        <h1> You have failed with {{results.score}} marks</h1>
+
+        {% endif %}
+    </table>
+</body>
+</html>
